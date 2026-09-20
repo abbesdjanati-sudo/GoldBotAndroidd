@@ -25,6 +25,8 @@ class MainActivity : Activity() {
 
     private var botRunning = false
     private var currentPrice = 0.0
+    private val priceHistory = mutableListOf<Double>()
+    private val timeHistory = mutableListOf<Long>()
 
     private val bg = Color.rgb(12, 15, 22)
     private val card = Color.rgb(24, 29, 39)
@@ -368,6 +370,14 @@ class MainActivity : Activity() {
                         if (price > 0) {
 
                             currentPrice = price
+                                priceHistory.add(price)
+    timeHistory.add(System.currentTimeMillis())
+
+    // الاحتفاظ بآخر 100 قراءة فقط
+    if (priceHistory.size > 100) {
+        priceHistory.removeAt(0)
+        timeHistory.removeAt(0)
+    }
 
                             priceText.text =
                                 String.format(
