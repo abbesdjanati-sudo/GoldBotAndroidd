@@ -8,8 +8,11 @@ import android.view.Gravity
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.widget.*
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Locale
-import kotlin.random.Random
+import kotlin.concurrent.thread
 
 class MainActivity : Activity() {
 
@@ -21,7 +24,7 @@ class MainActivity : Activity() {
     private lateinit var startButton: Button
 
     private var botRunning = false
-    private var price = 2645.20
+    private var currentPrice = 0.0
 
     private val bg = Color.rgb(12, 15, 22)
     private val card = Color.rgb(24, 29, 39)
@@ -38,7 +41,9 @@ class MainActivity : Activity() {
         window.navigationBarColor = bg
 
         buildInterface()
-        startDemoAnimation()
+
+        // جلب السعر الحقيقي عند تشغيل التطبيق
+        fetchGoldPrice()
     }
 
     private fun buildInterface() {
@@ -79,7 +84,7 @@ class MainActivity : Activity() {
             makeText("●  حالة الروبوت", 15f, gray)
         )
 
-        statusText = makeText("متوقف", 25f, red)
+        statusText = makeText("●  متوقف", 25f, red)
         statusText.setTypeface(null, Typeface.BOLD)
         statusCard.addView(statusText)
 
@@ -109,12 +114,17 @@ class MainActivity : Activity() {
         pair.setTypeface(null, Typeface.BOLD)
         marketCard.addView(pair)
 
-        priceText = makeText("$2,645.20", 30f, gold)
+        priceText = makeText(
+            "جاري جلب السعر...",
+            30f,
+            gold
+        )
+
         priceText.setTypeface(null, Typeface.BOLD)
         marketCard.addView(priceText)
 
         marketCard.addView(
-            makeText("●  وضع تجريبي", 14f, green)
+            makeText("●  بيانات الإنترنت", 14f, green)
         )
 
         root.addView(marketCard)
@@ -181,6 +191,20 @@ class MainActivity : Activity() {
 
         actionsCard.addView(
             makeText("⚡  التحكم السريع", 15f, gray)
+        )
+
+        val refreshButton = Button(this)
+        refreshButton.text = "🔄  تحديث سعر الذهب"
+        refreshButton.setTextColor(white)
+        refreshButton.setBackgroundColor(Color.rgb(55, 65, 85))
+
+        refreshButton.setOnClickListener {
+            fetchGoldPrice()
+        }
+
+        actionsCard.addView(
+            refreshButton,
+            matchParams(8)
         )
 
         val analyzeButton = Button(this)
@@ -260,7 +284,7 @@ class MainActivity : Activity() {
         )
 
         activityText = makeText(
-            "لا توجد صفقات بعد",
+            "جاري الاتصال بمصدر بيانات الذهب...",
             15f,
             gray
         )
@@ -272,7 +296,7 @@ class MainActivity : Activity() {
         addSpace(root, 20)
 
         val footer = makeText(
-            "GoldBot  •  MT5 Ready",
+            "GoldBot  •  Live Market Data",
             12f,
             gray
         )
@@ -284,9 +308,133 @@ class MainActivity : Activity() {
         setContentView(scroll)
     }
 
-    // =========================
+    // =====================================================
+    // جلب سعر الذهب من الإنترنت
+    // =====================================================
+
+    private fun fetchGoldPrice() {
+
+        priceText.text = "جاري التحديث..."
+        priceText.setTextColor(gold)
+
+        activityText.text =
+            "⏳ جاري الاتصال بمصدر بيانات الذهب..."
+
+        thread {
+
+            try {
+
+                /*
+                 * نقطة اختبار عامة.
+                 *
+                 * ملاحظة:
+                 * هذا الجزء يحتاج API حقيقي لسعر XAU/USD.
+                 * الرابط التالي مجرد مكان اتصال وليس ضمانًا
+                 * بأن الخدمة ستوفر السعر بدون مفتاح.
+                 */
+
+                val url = URL(
+                    "https://api.gold-api.com/price/XAU"
+                )
+
+                val connection =
+                    url.openConnection() as HttpURLConnection
+
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                val responseCode =
+                    connection.responseCode
+
+                if (responseCode == 200) {
+
+                    val response =
+                        connection.inputStream
+                            .bufferedReader()
+                            .use { it.readText() }
+
+                    val json =
+                        JSONObject(response)
+
+                    val price =
+                        json.optDouble(
+                            "price",
+                            0.0
+                        )
+
+                    runOnUiThread {
+
+                        if (price > 0) {
+
+                            currentPrice = price
+
+                            priceText.text =
+                                String.format(
+                                    Locale.US,
+                                    "$%,.2f",
+                                    price
+                                )
+
+                            priceText.setTextColor(gold)
+
+                            activityText.text =
+                                "✓ تم تحديث سعر الذهب\n" +
+                                "XAU/USD\n" +
+                                "السعر: " +
+                                String.format(
+                                    Locale.US,
+                                    "$%,.2f",
+                                    price
+                                )
+
+                        } else {
+
+                            showPriceError(
+                                "مصدر البيانات لم يرجع سعرًا صحيحًا"
+                            )
+                        }
+                    }
+
+                } else {
+
+                    runOnUiThread {
+
+                        showPriceError(
+                            "HTTP $responseCode"
+                        )
+                    }
+                }
+
+                connection.disconnect()
+
+            } catch (e: Exception) {
+
+                runOnUiThread {
+
+                    showPriceError(
+                        "تعذر الاتصال بالإنترنت"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun showPriceError(message: String) {
+
+        priceText.text =
+            "السعر غير متاح"
+
+        priceText.setTextColor(red)
+
+        activityText.text =
+            "❌ $message\n" +
+            "اضغط تحديث وحاول مرة أخرى."
+    }
+
+    // =====================================================
     // MT5 SETTINGS
-    // =========================
+    // =====================================================
 
     private fun showMt5Settings() {
 
@@ -337,7 +485,7 @@ class MainActivity : Activity() {
 
             Toast.makeText(
                 this,
-                "الاتصال الحقيقي بـ MT5 لم يتم تفعيله بعد",
+                "الاتصال الحقيقي بـ MT5 يحتاج MT5 Desktop أو VPS",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -370,9 +518,9 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================
+    // =====================================================
     // BOT
-    // =========================
+    // =====================================================
 
     private fun toggleBot() {
 
@@ -383,7 +531,9 @@ class MainActivity : Activity() {
             statusText.text = "●  يعمل الآن"
             statusText.setTextColor(green)
 
-            startButton.text = "■  إيقاف الروبوت"
+            startButton.text =
+                "■  إيقاف الروبوت"
+
             startButton.setBackgroundColor(red)
 
             activityText.text =
@@ -399,10 +549,14 @@ class MainActivity : Activity() {
 
         } else {
 
-            statusText.text = "●  متوقف"
+            statusText.text =
+                "●  متوقف"
+
             statusText.setTextColor(red)
 
-            startButton.text = "▶  تشغيل الروبوت"
+            startButton.text =
+                "▶  تشغيل الروبوت"
+
             startButton.setBackgroundColor(green)
 
             activityText.text =
@@ -416,11 +570,23 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================
+    // =====================================================
     // ANALYSIS
-    // =========================
+    // =====================================================
 
     private fun analyzeMarket() {
+
+        if (currentPrice <= 0) {
+
+            signalText.text =
+                "⚠️  لا يوجد سعر حقيقي بعد"
+
+            signalText.setTextColor(red)
+
+            fetchGoldPrice()
+
+            return
+        }
 
         signalText.text =
             "🔄  تحليل البيانات..."
@@ -431,70 +597,37 @@ class MainActivity : Activity() {
 
         HandlerDelay(1500) {
 
-            val signals = arrayOf(
-                "🟢  BUY  — إشارة شراء",
-                "🔴  SELL  — إشارة بيع",
-                "🟡  WAIT  — انتظار"
-            )
+            /*
+             * مؤقتًا لا نعطي BUY/SELL عشوائي.
+             * سنضيف التحليل الحقيقي بعد إدخال بيانات
+             * الشموع والمؤشرات.
+             */
 
-            val signal =
-                signals[Random.nextInt(signals.size)]
+            signalText.text =
+                "🟡  WAIT — بانتظار التحليل الحقيقي"
 
-            signalText.text = signal
-
-            when {
-                signal.contains("BUY") ->
-                    signalText.setTextColor(green)
-
-                signal.contains("SELL") ->
-                    signalText.setTextColor(red)
-
-                else ->
-                    signalText.setTextColor(gold)
-            }
+            signalText.setTextColor(gold)
 
             activityText.text =
-                "✓ اكتمل التحليل\n" +
-                "XAU/USD\n" +
-                "الإشارة: $signal"
+                "✓ تم الحصول على سعر XAU/USD\n" +
+                "السعر الحالي: " +
+                String.format(
+                    Locale.US,
+                    "$%,.2f",
+                    currentPrice
+                ) +
+                "\n⏳ محرك التحليل قيد التطوير"
         }
     }
 
-    // =========================
-    // DEMO PRICE
-    // =========================
-
-    private fun startDemoAnimation() {
-
-        HandlerDelay(2500) {
-
-            price += Random.nextInt(-20, 21) / 100.0
-
-            priceText.text = String.format(
-                Locale.US,
-                "$%,.2f",
-                price
-            )
-
-            if (botRunning) {
-
-                signalText.text =
-                    "🔄  مراقبة السوق..."
-
-                signalText.setTextColor(gold)
-            }
-
-            startDemoAnimation()
-        }
-    }
-
-    // =========================
+    // =====================================================
     // HELPERS
-    // =========================
+    // =====================================================
 
     private fun createCard(): LinearLayout {
 
-        val cardLayout = LinearLayout(this)
+        val cardLayout =
+            LinearLayout(this)
 
         cardLayout.orientation =
             LinearLayout.VERTICAL
@@ -567,7 +700,10 @@ class MainActivity : Activity() {
     private fun animateView(view: View) {
 
         val animation =
-            AlphaAnimation(0.35f, 1.0f)
+            AlphaAnimation(
+                0.35f,
+                1.0f
+            )
 
         animation.duration = 700
         animation.repeatMode =
