@@ -571,8 +571,9 @@ class MainActivity : Activity() {
 
         calculateTrend()
 
-        activityText.text +=
-            "\n✓ تم تحليل حركة السعر"
+        activityText.text =
+    activityText.text.toString() +
+    "  "\n✓ تم تحليل حركة السعر"
     }
 
     // ==============================
