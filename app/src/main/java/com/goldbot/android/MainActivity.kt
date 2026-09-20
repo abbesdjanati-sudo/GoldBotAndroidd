@@ -7,12 +7,7 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.view.animation.AlphaAnimation
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.Space
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import java.util.Locale
 import kotlin.random.Random
 
@@ -55,10 +50,7 @@ class MainActivity : Activity() {
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(22, 20, 22, 30)
 
-        // =========================
         // HEADER
-        // =========================
-
         val header = LinearLayout(this)
         header.orientation = LinearLayout.HORIZONTAL
         header.gravity = Gravity.CENTER_VERTICAL
@@ -74,23 +66,13 @@ class MainActivity : Activity() {
         title.setTypeface(null, Typeface.BOLD)
         title.setTextColor(white)
 
-        val version = TextView(this)
-        version.text = "  AI TRADING"
-        version.textSize = 11f
-        version.setTextColor(gray)
-
         header.addView(logo)
         header.addView(title)
-        header.addView(version)
 
         root.addView(header)
-
         addSpace(root, 18)
 
-        // =========================
         // BOT STATUS
-        // =========================
-
         val statusCard = createCard()
 
         statusCard.addView(
@@ -99,7 +81,6 @@ class MainActivity : Activity() {
 
         statusText = makeText("متوقف", 25f, red)
         statusText.setTypeface(null, Typeface.BOLD)
-
         statusCard.addView(statusText)
 
         startButton = Button(this)
@@ -112,19 +93,12 @@ class MainActivity : Activity() {
             toggleBot()
         }
 
-        statusCard.addView(
-            startButton,
-            matchParams(14)
-        )
-
+        statusCard.addView(startButton, matchParams(14))
         root.addView(statusCard)
 
         addSpace(root, 14)
 
-        // =========================
         // MARKET
-        // =========================
-
         val marketCard = createCard()
 
         marketCard.addView(
@@ -133,30 +107,21 @@ class MainActivity : Activity() {
 
         val pair = makeText("XAU/USD", 24f, white)
         pair.setTypeface(null, Typeface.BOLD)
-
         marketCard.addView(pair)
 
         priceText = makeText("$2,645.20", 30f, gold)
         priceText.setTypeface(null, Typeface.BOLD)
-
         marketCard.addView(priceText)
 
-        val marketStatus = makeText(
-            "●  السوق متصل - تجريبي",
-            14f,
-            green
+        marketCard.addView(
+            makeText("●  وضع تجريبي", 14f, green)
         )
-
-        marketCard.addView(marketStatus)
 
         root.addView(marketCard)
 
         addSpace(root, 14)
 
-        // =========================
-        // MARKET ANALYSIS
-        // =========================
-
+        // SIGNAL
         val signalCard = createCard()
 
         signalCard.addView(
@@ -181,17 +146,13 @@ class MainActivity : Activity() {
         )
 
         timeframe.gravity = Gravity.CENTER
-
         signalCard.addView(timeframe)
 
         root.addView(signalCard)
 
         addSpace(root, 14)
 
-        // =========================
         // ACCOUNT
-        // =========================
-
         val accountCard = createCard()
 
         accountCard.addView(
@@ -205,25 +166,17 @@ class MainActivity : Activity() {
         )
 
         balanceText.setTypeface(null, Typeface.BOLD)
-
         accountCard.addView(balanceText)
 
-        val profit = makeText(
-            "الربح اليومي:  --",
-            17f,
-            gray
+        accountCard.addView(
+            makeText("الربح اليومي:  --", 17f, gray)
         )
-
-        accountCard.addView(profit)
 
         root.addView(accountCard)
 
         addSpace(root, 14)
 
-        // =========================
-        // QUICK ACTIONS
-        // =========================
-
+        // ACTIONS
         val actionsCard = createCard()
 
         actionsCard.addView(
@@ -231,13 +184,9 @@ class MainActivity : Activity() {
         )
 
         val analyzeButton = Button(this)
-
         analyzeButton.text = "🔍  تحليل XAU/USD"
-        analyzeButton.textSize = 15f
         analyzeButton.setTextColor(white)
-        analyzeButton.setBackgroundColor(
-            Color.rgb(55, 65, 85)
-        )
+        analyzeButton.setBackgroundColor(Color.rgb(55, 65, 85))
 
         analyzeButton.setOnClickListener {
             analyzeMarket()
@@ -248,14 +197,24 @@ class MainActivity : Activity() {
             matchParams(8)
         )
 
-        val telegramButton = Button(this)
+        val mt5Button = Button(this)
+        mt5Button.text = "⚙️  إعدادات MT5"
+        mt5Button.setTextColor(white)
+        mt5Button.setBackgroundColor(Color.rgb(55, 65, 85))
 
-        telegramButton.text = "🔔  Telegram"
-        telegramButton.textSize = 15f
-        telegramButton.setTextColor(white)
-        telegramButton.setBackgroundColor(
-            Color.rgb(55, 65, 85)
+        mt5Button.setOnClickListener {
+            showMt5Settings()
+        }
+
+        actionsCard.addView(
+            mt5Button,
+            matchParams(8)
         )
+
+        val telegramButton = Button(this)
+        telegramButton.text = "🔔  Telegram"
+        telegramButton.setTextColor(white)
+        telegramButton.setBackgroundColor(Color.rgb(55, 65, 85))
 
         telegramButton.setOnClickListener {
             toast("Telegram سيتم ربطه لاحقًا")
@@ -270,10 +229,7 @@ class MainActivity : Activity() {
 
         addSpace(root, 14)
 
-        // =========================
-        // TRADING SETTINGS
-        // =========================
-
+        // SETTINGS
         val settingsCard = createCard()
 
         settingsCard.addView(
@@ -296,10 +252,7 @@ class MainActivity : Activity() {
 
         addSpace(root, 14)
 
-        // =========================
-        // BOT LOG
-        // =========================
-
+        // LOG
         val activityCard = createCard()
 
         activityCard.addView(
@@ -318,27 +271,107 @@ class MainActivity : Activity() {
 
         addSpace(root, 20)
 
-        // =========================
-        // FOOTER
-        // =========================
-
         val footer = makeText(
-            "GoldBot  •  AI Trading Assistant",
+            "GoldBot  •  MT5 Ready",
             12f,
             gray
         )
 
         footer.gravity = Gravity.CENTER
-
         root.addView(footer)
 
         scroll.addView(root)
-
         setContentView(scroll)
     }
 
     // =========================
-    // START / STOP BOT
+    // MT5 SETTINGS
+    // =========================
+
+    private fun showMt5Settings() {
+
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(35, 20, 35, 20)
+        layout.setBackgroundColor(bg)
+
+        val title = makeText(
+            "⚙️ إعدادات MT5",
+            25f,
+            white
+        )
+
+        title.setTypeface(null, Typeface.BOLD)
+        layout.addView(title)
+
+        addSpace(layout, 15)
+
+        val server = EditText(this)
+        server.hint = "MT5 Server"
+        server.setTextColor(white)
+        server.setHintTextColor(gray)
+        layout.addView(server)
+
+        val login = EditText(this)
+        login.hint = "MT5 Login"
+        login.inputType = 2
+        login.setTextColor(white)
+        login.setHintTextColor(gray)
+        layout.addView(login)
+
+        val password = EditText(this)
+        password.hint = "MT5 Password"
+        password.inputType = 129
+        password.setTextColor(white)
+        password.setHintTextColor(gray)
+        layout.addView(password)
+
+        addSpace(layout, 15)
+
+        val testButton = Button(this)
+        testButton.text = "🔌 اختبار الاتصال"
+        testButton.setTextColor(white)
+        testButton.setBackgroundColor(green)
+
+        testButton.setOnClickListener {
+
+            Toast.makeText(
+                this,
+                "الاتصال الحقيقي بـ MT5 لم يتم تفعيله بعد",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        layout.addView(testButton)
+
+        addSpace(layout, 8)
+
+        val closeButton = Button(this)
+        closeButton.text = "رجوع"
+        closeButton.setTextColor(white)
+        closeButton.setBackgroundColor(
+            Color.rgb(55, 65, 85)
+        )
+
+        layout.addView(closeButton)
+
+        val dialog = android.app.Dialog(this)
+
+        dialog.setContentView(layout)
+
+        dialog.window?.setBackgroundDrawableResource(
+            android.R.color.transparent
+        )
+
+        dialog.show()
+
+        closeButton.setOnClickListener {
+            dialog.dismiss()
+        }
+    }
+
+    // =========================
+    // BOT
     // =========================
 
     private fun toggleBot() {
@@ -384,7 +417,7 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // MARKET ANALYSIS
+    // ANALYSIS
     // =========================
 
     private fun analyzeMarket() {
@@ -410,17 +443,14 @@ class MainActivity : Activity() {
             signalText.text = signal
 
             when {
-                signal.contains("BUY") -> {
+                signal.contains("BUY") ->
                     signalText.setTextColor(green)
-                }
 
-                signal.contains("SELL") -> {
+                signal.contains("SELL") ->
                     signalText.setTextColor(red)
-                }
 
-                else -> {
+                else ->
                     signalText.setTextColor(gold)
-                }
             }
 
             activityText.text =
@@ -431,7 +461,7 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // DEMO PRICE ANIMATION
+    // DEMO PRICE
     // =========================
 
     private fun startDemoAnimation() {
@@ -459,7 +489,7 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // CREATE CARD
+    // HELPERS
     // =========================
 
     private fun createCard(): LinearLayout {
@@ -480,10 +510,6 @@ class MainActivity : Activity() {
 
         return cardLayout
     }
-
-    // =========================
-    // CREATE TEXT
-    // =========================
 
     private fun makeText(
         text: String,
@@ -507,10 +533,6 @@ class MainActivity : Activity() {
         return view
     }
 
-    // =========================
-    // BUTTON PARAMETERS
-    // =========================
-
     private fun matchParams(
         marginTop: Int
     ): LinearLayout.LayoutParams {
@@ -525,49 +547,6 @@ class MainActivity : Activity() {
 
         return params
     }
-
-    // =========================
-    // ANIMATION
-    // =========================
-
-    private fun animateView(view: View) {
-
-        val animation =
-            AlphaAnimation(
-                0.35f,
-                1.0f
-            )
-
-        animation.duration = 700
-        animation.repeatMode =
-            AlphaAnimation.REVERSE
-
-        animation.repeatCount = 2
-
-        view.startAnimation(animation)
-    }
-
-    // =========================
-    // DELAY
-    // =========================
-
-    private fun HandlerDelay(
-        delay: Long,
-        action: () -> Unit
-    ) {
-
-        android.os.Handler(mainLooper)
-            .postDelayed(
-                {
-                    action()
-                },
-                delay
-            )
-    }
-
-    // =========================
-    // SPACE
-    // =========================
 
     private fun addSpace(
         root: LinearLayout,
@@ -585,9 +564,31 @@ class MainActivity : Activity() {
         )
     }
 
-    // =========================
-    // TOAST
-    // =========================
+    private fun animateView(view: View) {
+
+        val animation =
+            AlphaAnimation(0.35f, 1.0f)
+
+        animation.duration = 700
+        animation.repeatMode =
+            AlphaAnimation.REVERSE
+
+        animation.repeatCount = 2
+
+        view.startAnimation(animation)
+    }
+
+    private fun HandlerDelay(
+        delay: Long,
+        action: () -> Unit
+    ) {
+
+        android.os.Handler(mainLooper)
+            .postDelayed(
+                { action() },
+                delay
+            )
+    }
 
     private fun toast(message: String) {
 
