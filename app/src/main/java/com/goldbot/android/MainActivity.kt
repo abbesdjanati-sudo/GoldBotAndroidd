@@ -7,8 +7,14 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.view.animation.AlphaAnimation
-import android.widget.*
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Space
+import android.widget.TextView
+import android.widget.Toast
 import java.util.Locale
+import kotlin.random.Random
 
 class MainActivity : Activity() {
 
@@ -49,7 +55,10 @@ class MainActivity : Activity() {
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(22, 20, 22, 30)
 
+        // =========================
         // HEADER
+        // =========================
+
         val header = LinearLayout(this)
         header.orientation = LinearLayout.HORIZONTAL
         header.gravity = Gravity.CENTER_VERTICAL
@@ -78,14 +87,19 @@ class MainActivity : Activity() {
 
         addSpace(root, 18)
 
-        // STATUS CARD
+        // =========================
+        // BOT STATUS
+        // =========================
+
         val statusCard = createCard()
 
-        val statusTitle = makeText("●  حالة الروبوت", 15f, gray)
-        statusCard.addView(statusTitle)
+        statusCard.addView(
+            makeText("●  حالة الروبوت", 15f, gray)
+        )
 
         statusText = makeText("متوقف", 25f, red)
         statusText.setTypeface(null, Typeface.BOLD)
+
         statusCard.addView(statusText)
 
         startButton = Button(this)
@@ -98,38 +112,63 @@ class MainActivity : Activity() {
             toggleBot()
         }
 
-        statusCard.addView(startButton, matchParams(14))
+        statusCard.addView(
+            startButton,
+            matchParams(14)
+        )
 
         root.addView(statusCard)
 
         addSpace(root, 14)
 
-        // MARKET CARD
+        // =========================
+        // MARKET
+        // =========================
+
         val marketCard = createCard()
 
-        marketCard.addView(makeText("🥇  الذهب", 15f, gray))
+        marketCard.addView(
+            makeText("🥇  الذهب", 15f, gray)
+        )
 
         val pair = makeText("XAU/USD", 24f, white)
         pair.setTypeface(null, Typeface.BOLD)
+
         marketCard.addView(pair)
 
         priceText = makeText("$2,645.20", 30f, gold)
         priceText.setTypeface(null, Typeface.BOLD)
+
         marketCard.addView(priceText)
 
-        val marketStatus = makeText("●  السوق متصل - تجريبي", 14f, green)
+        val marketStatus = makeText(
+            "●  السوق متصل - تجريبي",
+            14f,
+            green
+        )
+
         marketCard.addView(marketStatus)
 
         root.addView(marketCard)
 
         addSpace(root, 14)
 
-        // SIGNAL CARD
+        // =========================
+        // MARKET ANALYSIS
+        // =========================
+
         val signalCard = createCard()
 
-        signalCard.addView(makeText("📊  تحليل السوق", 15f, gray))
+        signalCard.addView(
+            makeText("📊  تحليل السوق", 15f, gray)
+        )
 
-        signalText = makeText("⏳  في انتظار التحليل", 23f, gold)
+        signalText = makeText(
+            "⏳  في انتظار التحليل",
+            23f,
+            gold
+        )
+
         signalText.setTypeface(null, Typeface.BOLD)
         signalText.setPadding(0, 18, 0, 18)
 
@@ -140,77 +179,132 @@ class MainActivity : Activity() {
             15f,
             gray
         )
+
         timeframe.gravity = Gravity.CENTER
+
         signalCard.addView(timeframe)
 
         root.addView(signalCard)
 
         addSpace(root, 14)
 
+        // =========================
         // ACCOUNT
+        // =========================
+
         val accountCard = createCard()
 
-        accountCard.addView(makeText("💰  الحساب", 15f, gray))
+        accountCard.addView(
+            makeText("💰  الحساب", 15f, gray)
+        )
 
-        balanceText = makeText("الرصيد:  --", 22f, white)
+        balanceText = makeText(
+            "الرصيد:  --",
+            22f,
+            white
+        )
+
         balanceText.setTypeface(null, Typeface.BOLD)
+
         accountCard.addView(balanceText)
 
-        val profit = makeText("الربح اليومي:  --", 17f, gray)
+        val profit = makeText(
+            "الربح اليومي:  --",
+            17f,
+            gray
+        )
+
         accountCard.addView(profit)
 
         root.addView(accountCard)
 
         addSpace(root, 14)
 
-        // ACTIONS
+        // =========================
+        // QUICK ACTIONS
+        // =========================
+
         val actionsCard = createCard()
 
-        actionsCard.addView(makeText("⚡  التحكم السريع", 15f, gray))
+        actionsCard.addView(
+            makeText("⚡  التحكم السريع", 15f, gray)
+        )
 
         val analyzeButton = Button(this)
+
         analyzeButton.text = "🔍  تحليل XAU/USD"
+        analyzeButton.textSize = 15f
         analyzeButton.setTextColor(white)
-        analyzeButton.setBackgroundColor(Color.rgb(55, 65, 85))
+        analyzeButton.setBackgroundColor(
+            Color.rgb(55, 65, 85)
+        )
 
         analyzeButton.setOnClickListener {
             analyzeMarket()
         }
 
-        actionsCard.addView(analyzeButton, matchParams(8))
+        actionsCard.addView(
+            analyzeButton,
+            matchParams(8)
+        )
 
         val telegramButton = Button(this)
+
         telegramButton.text = "🔔  Telegram"
+        telegramButton.textSize = 15f
         telegramButton.setTextColor(white)
-        telegramButton.setBackgroundColor(Color.rgb(55, 65, 85))
+        telegramButton.setBackgroundColor(
+            Color.rgb(55, 65, 85)
+        )
 
         telegramButton.setOnClickListener {
             toast("Telegram سيتم ربطه لاحقًا")
         }
 
-        actionsCard.addView(telegramButton, matchParams(8))
+        actionsCard.addView(
+            telegramButton,
+            matchParams(8)
+        )
 
         root.addView(actionsCard)
 
         addSpace(root, 14)
 
+        // =========================
         // TRADING SETTINGS
+        // =========================
+
         val settingsCard = createCard()
 
-        settingsCard.addView(makeText("⚙️  إعدادات التداول", 15f, gray))
+        settingsCard.addView(
+            makeText("⚙️  إعدادات التداول", 15f, gray)
+        )
 
-        settingsCard.addView(makeText("Stop Loss        --", 16f, white))
-        settingsCard.addView(makeText("Take Profit      --", 16f, white))
-        settingsCard.addView(makeText("Risk              1%", 16f, white))
+        settingsCard.addView(
+            makeText("Stop Loss        --", 16f, white)
+        )
+
+        settingsCard.addView(
+            makeText("Take Profit      --", 16f, white)
+        )
+
+        settingsCard.addView(
+            makeText("Risk              1%", 16f, white)
+        )
 
         root.addView(settingsCard)
 
         addSpace(root, 14)
 
-        // ACTIVITY
+        // =========================
+        // BOT LOG
+        // =========================
+
         val activityCard = createCard()
 
-        activityCard.addView(makeText("📜  سجل الروبوت", 15f, gray))
+        activityCard.addView(
+            makeText("📜  سجل الروبوت", 15f, gray)
+        )
 
         activityText = makeText(
             "لا توجد صفقات بعد",
@@ -224,18 +318,28 @@ class MainActivity : Activity() {
 
         addSpace(root, 20)
 
+        // =========================
+        // FOOTER
+        // =========================
+
         val footer = makeText(
             "GoldBot  •  AI Trading Assistant",
             12f,
             gray
         )
+
         footer.gravity = Gravity.CENTER
 
         root.addView(footer)
 
         scroll.addView(root)
+
         setContentView(scroll)
     }
+
+    // =========================
+    // START / STOP BOT
+    // =========================
 
     private fun toggleBot() {
 
@@ -253,7 +357,9 @@ class MainActivity : Activity() {
                 "✓ تم تشغيل GoldBot\n" +
                 "⏳ جاري مراقبة XAU/USD..."
 
-            signalText.text = "🔄  جاري تحليل السوق..."
+            signalText.text =
+                "🔄  جاري تحليل السوق..."
+
             signalText.setTextColor(gold)
 
             animateView(signalText)
@@ -270,14 +376,22 @@ class MainActivity : Activity() {
                 "الروبوت متوقف\n" +
                 "اضغط تشغيل للبدء"
 
-            signalText.text = "⏳  في انتظار التحليل"
+            signalText.text =
+                "⏳  في انتظار التحليل"
+
             signalText.setTextColor(gold)
         }
     }
 
+    // =========================
+    // MARKET ANALYSIS
+    // =========================
+
     private fun analyzeMarket() {
 
-        signalText.text = "🔄  تحليل البيانات..."
+        signalText.text =
+            "🔄  تحليل البيانات..."
+
         signalText.setTextColor(gold)
 
         animateView(signalText)
@@ -290,14 +404,23 @@ class MainActivity : Activity() {
                 "🟡  WAIT  — انتظار"
             )
 
-            val signal = signals[(System.currentTimeMillis() % 3).toInt()]
+            val signal =
+                signals[Random.nextInt(signals.size)]
 
             signalText.text = signal
 
             when {
-                signal.contains("BUY") -> signalText.setTextColor(green)
-                signal.contains("SELL") -> signalText.setTextColor(red)
-                else -> signalText.setTextColor(gold)
+                signal.contains("BUY") -> {
+                    signalText.setTextColor(green)
+                }
+
+                signal.contains("SELL") -> {
+                    signalText.setTextColor(red)
+                }
+
+                else -> {
+                    signalText.setTextColor(gold)
+                }
             }
 
             activityText.text =
@@ -307,11 +430,15 @@ class MainActivity : Activity() {
         }
     }
 
+    // =========================
+    // DEMO PRICE ANIMATION
+    // =========================
+
     private fun startDemoAnimation() {
 
         HandlerDelay(2500) {
 
-            price += ((-20..20).random() / 100.0)
+            price += Random.nextInt(-20, 21) / 100.0
 
             priceText.text = String.format(
                 Locale.US,
@@ -320,7 +447,10 @@ class MainActivity : Activity() {
             )
 
             if (botRunning) {
-                signalText.text = "🔄  مراقبة السوق..."
+
+                signalText.text =
+                    "🔄  مراقبة السوق..."
+
                 signalText.setTextColor(gold)
             }
 
@@ -328,15 +458,32 @@ class MainActivity : Activity() {
         }
     }
 
+    // =========================
+    // CREATE CARD
+    // =========================
+
     private fun createCard(): LinearLayout {
 
         val cardLayout = LinearLayout(this)
-        cardLayout.orientation = LinearLayout.VERTICAL
-        cardLayout.setPadding(20, 18, 20, 18)
+
+        cardLayout.orientation =
+            LinearLayout.VERTICAL
+
+        cardLayout.setPadding(
+            20,
+            18,
+            20,
+            18
+        )
+
         cardLayout.setBackgroundColor(card)
 
         return cardLayout
     }
+
+    // =========================
+    // CREATE TEXT
+    // =========================
 
     private fun makeText(
         text: String,
@@ -345,54 +492,109 @@ class MainActivity : Activity() {
     ): TextView {
 
         val view = TextView(this)
+
         view.text = text
         view.textSize = size
         view.setTextColor(color)
-        view.setPadding(0, 5, 0, 5)
+
+        view.setPadding(
+            0,
+            5,
+            0,
+            5
+        )
 
         return view
     }
 
-    private fun matchParams(marginTop: Int): LinearLayout.LayoutParams {
+    // =========================
+    // BUTTON PARAMETERS
+    // =========================
 
-        val params = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
+    private fun matchParams(
+        marginTop: Int
+    ): LinearLayout.LayoutParams {
+
+        val params =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
 
         params.topMargin = marginTop
 
         return params
     }
 
+    // =========================
+    // ANIMATION
+    // =========================
+
     private fun animateView(view: View) {
 
-        val animation = AlphaAnimation(0.35f, 1.0f)
+        val animation =
+            AlphaAnimation(
+                0.35f,
+                1.0f
+            )
+
         animation.duration = 700
-        animation.repeatMode = AlphaAnimation.REVERSE
+        animation.repeatMode =
+            AlphaAnimation.REVERSE
+
         animation.repeatCount = 2
 
         view.startAnimation(animation)
     }
 
-    private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    // =========================
+    // DELAY
+    // =========================
+
+    private fun HandlerDelay(
+        delay: Long,
+        action: () -> Unit
+    ) {
+
+        android.os.Handler(mainLooper)
+            .postDelayed(
+                {
+                    action()
+                },
+                delay
+            )
     }
 
-    private fun HandlerDelay(delay: Long, action: () -> Unit) {
+    // =========================
+    // SPACE
+    // =========================
 
-        android.os.Handler(mainLooper).postDelayed({
-            action()
-        }, delay)
-private fun addSpace(root: LinearLayout, height: Int) {
+    private fun addSpace(
+        root: LinearLayout,
+        height: Int
+    ) {
 
-    val space = Space(this)
+        val space = Space(this)
 
-    root.addView(
-        space,
-        LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            height
+        root.addView(
+            space,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                height
+            )
         )
-    )
+    }
+
+    // =========================
+    // TOAST
+    // =========================
+
+    private fun toast(message: String) {
+
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
 }
