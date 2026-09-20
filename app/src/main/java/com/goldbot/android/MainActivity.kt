@@ -384,5 +384,15 @@ class MainActivity : Activity() {
         android.os.Handler(mainLooper).postDelayed({
             action()
         }, delay)
-    }
+private fun addSpace(root: LinearLayout, height: Int) {
+
+    val space = Space(this)
+
+    root.addView(
+        space,
+        LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            height
+        )
+    )
 }
