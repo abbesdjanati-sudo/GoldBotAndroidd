@@ -65,6 +65,159 @@ class MainActivity : Activity() {
 
     private fun buildInterface() {
 
+    val scroll = android.widget.ScrollView(this)
+
+    val root = LinearLayout(this)
+    root.orientation = LinearLayout.VERTICAL
+    root.setPadding(20, 20, 20, 40)
+    root.setBackgroundColor(Color.rgb(12, 15, 22))
+
+    scroll.addView(root)
+
+    // Header
+    val title = TextView(this)
+    title.text = "GOLD BOT"
+    title.textSize = 30f
+    title.setTextColor(Color.YELLOW)
+    title.gravity = Gravity.CENTER
+    title.setPadding(10, 10, 10, 5)
+
+    root.addView(title)
+
+    val subtitle = TextView(this)
+    subtitle.text = "XAU/USD • AI TRADING DASHBOARD"
+    subtitle.textSize = 14f
+    subtitle.setTextColor(Color.LTGRAY)
+    subtitle.gravity = Gravity.CENTER
+    subtitle.setPadding(5, 0, 5, 20)
+
+    root.addView(subtitle)
+
+    // Status
+    val statusTitle = TextView(this)
+    statusTitle.text = "● BOT STATUS"
+    statusTitle.textSize = 15f
+    statusTitle.setTextColor(Color.rgb(0, 220, 120))
+    statusTitle.setPadding(15, 15, 15, 5)
+
+    root.addView(statusTitle)
+
+    statusText = TextView(this)
+    statusText.text = "جاري الاتصال..."
+    statusText.textSize = 16f
+    statusText.setTextColor(Color.WHITE)
+    statusText.setPadding(15, 5, 15, 15)
+
+    root.addView(statusText)
+
+    // Price
+    val priceTitle = TextView(this)
+    priceTitle.text = "XAU/USD PRICE"
+    priceTitle.textSize = 16f
+    priceTitle.setTextColor(Color.LTGRAY)
+    priceTitle.gravity = Gravity.CENTER
+    priceTitle.setPadding(10, 20, 10, 5)
+
+    root.addView(priceTitle)
+
+    priceText = TextView(this)
+    priceText.text = "XAU/USD\n--"
+    priceText.textSize = 34f
+    priceText.setTextColor(Color.YELLOW)
+    priceText.gravity = Gravity.CENTER
+    priceText.setPadding(20, 15, 20, 20)
+
+    root.addView(priceText)
+
+    // Refresh button
+    val refreshButton = Button(this)
+    refreshButton.text = "⟳  تحديث السعر الآن"
+
+    refreshButton.setOnClickListener {
+        getGoldPrice()
+    }
+
+    root.addView(refreshButton)
+
+    // Signal
+    val signalTitle = TextView(this)
+    signalTitle.text = "TRADING SIGNAL"
+    signalTitle.textSize = 18f
+    signalTitle.setTextColor(Color.LTGRAY)
+    signalTitle.gravity = Gravity.CENTER
+    signalTitle.setPadding(10, 25, 10, 5)
+
+    root.addView(signalTitle)
+
+    signalText = TextView(this)
+    signalText.text = "WAIT"
+    signalText.textSize = 32f
+    signalText.setTextColor(Color.rgb(255, 170, 0))
+    signalText.gravity = Gravity.CENTER
+    signalText.setPadding(20, 15, 20, 20)
+
+    root.addView(signalText)
+
+    // Analysis
+    val analysisTitle = TextView(this)
+    analysisTitle.text = "TECHNICAL ANALYSIS"
+    analysisTitle.textSize = 18f
+    analysisTitle.setTextColor(Color.LTGRAY)
+    analysisTitle.gravity = Gravity.CENTER
+    analysisTitle.setPadding(10, 20, 10, 5)
+
+    root.addView(analysisTitle)
+
+    analysisText = TextView(this)
+    analysisText.text =
+        "EMA 9: --\n" +
+        "EMA 21: --\n" +
+        "RSI 14: --\n" +
+        "MACD: --\n" +
+        "Trend: --"
+
+    analysisText.textSize = 17f
+    analysisText.setTextColor(Color.WHITE)
+    analysisText.gravity = Gravity.CENTER
+    analysisText.setPadding(20, 15, 20, 20)
+
+    root.addView(analysisText)
+
+    // History
+    val historyTitle = TextView(this)
+    historyTitle.text = "PRICE HISTORY"
+    historyTitle.textSize = 18f
+    historyTitle.setTextColor(Color.LTGRAY)
+    historyTitle.gravity = Gravity.CENTER
+    historyTitle.setPadding(10, 20, 10, 5)
+
+    root.addView(historyTitle)
+
+    historyText = TextView(this)
+    historyText.text = "لا توجد بيانات بعد"
+    historyText.textSize = 16f
+    historyText.setTextColor(Color.WHITE)
+    historyText.gravity = Gravity.CENTER
+    historyText.setPadding(20, 10, 20, 20)
+
+    root.addView(historyText)
+
+    // Footer
+    val footer = TextView(this)
+    footer.text =
+        "GoldBot\n" +
+        "Real XAU price • Auto update 15s"
+
+    footer.textSize = 13f
+    footer.setTextColor(Color.GRAY)
+    footer.gravity = Gravity.CENTER
+    footer.setPadding(10, 30, 10, 10)
+
+    root.addView(footer)
+
+    setContentView(scroll)
+}
+
         val root = LinearLayout(this)
 
         root.orientation =
