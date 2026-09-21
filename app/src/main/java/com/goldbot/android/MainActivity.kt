@@ -70,14 +70,16 @@ class MainActivity : Activity() {
         window.statusBarColor = bg
         window.navigationBarColor = bg
 
-        buildInterface()
+        override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
 
-        handler.postDelayed({
-            fetchGoldPrice()
-        }, 1000)
+    window.statusBarColor = bg
+    window.navigationBarColor = bg
 
-        handler.postDelayed(refreshTask, 16000)
-    }
+    buildInterface()
+} 
+
+        
 
     override fun onDestroy() {
         handler.removeCallbacks(refreshTask)
