@@ -1,68 +1,116 @@
 package com.goldbot.android
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.graphics.Color
-import android.graphics.Typeface
 import android.view.Gravity
+import android.view.View
 import android.widget.*
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import java.util.Locale
-import kotlin.concurrent.thread
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(15, 18, 25)
-    private val card = Color.rgb(25, 29, 38)
-    private val gold = Color.rgb(255, 193, 7)
-    private val white = Color.WHITE
-    private val gray = Color.LTGRAY
-    private val green = Color.rgb(50, 200, 100)
-    private val red = Color.rgb(240, 70, 70)
+    // =========================
+    // UI
+    // =========================
 
     private lateinit var priceText: TextView
     private lateinit var statusText: TextView
     private lateinit var signalText: TextView
-    private lateinit var indicatorText: TextView
-    private lateinit var accountText: TextView
+    private lateinit var indicatorsText: TextView
+    private lateinit var tradeText: TextView
+    private lateinit var balanceText: TextView
     private lateinit var logText: TextView
+
+    private lateinit var startButton: Button
+    private lateinit var paperButton: Button
+    private lateinit var telegramButton: Button
+    private lateinit var mt5Button: Button
+
+    // =========================
+    // Bot
+    // =========================
+
+    private var botRunning = false
+    private var paperTrading = false
+
+    private var currentPrice = 0.0
 
     private val prices = ArrayList<Double>()
 
-    private var currentPrice = 0.0
-    private var botRunning = false
+    private var lastSignal = "WAIT"
+
+    private var stopLoss = 0.0
+    private var takeProfit = 0.0
+
+    // =========================
+    // Paper account
+    // =========================
 
     private var balance = 10000.0
-    private var riskPercent = 1.0
 
     private var position = ""
     private var entryPrice = 0.0
-    private var stopLoss = 0.0
-    private var takeProfit = 0.0
+    private var positionSize = 0.0
+
+    private var riskPercent = 1.0
+
+    // =========================
+    // Telegram
+    // =========================
 
     private var telegramToken = ""
     private var telegramChatId = ""
 
+    // =========================
+    // MT5 settings
+    // =========================
+
+    private var mt5Server = ""
+    private var mt5Login = ""
+    private var mt5Password = ""
+
+    // =========================
+    // Handler
+    // =========================
+
     private val handler = Handler(Looper.getMainLooper())
 
-    private val updateTask = object : Runnable {
+    private val updateRunnable = object : Runnable {
         override fun run() {
-            fetchGoldPrice()
 
             if (botRunning) {
-                handler.postDelayed(this, 15000)
+                fetchGoldPrice()
             }
+
+            handler.postDelayed(this, 15000)
         }
     }
+
+    // =========================
+    // Colors
+    // =========================
+
+    private val bg = Color.rgb(15, 18, 25)
+    private val card = Color.rgb(25, 29, 39)
+    private val gold = Color.rgb(255, 215, 0)
+    private val white = Color.WHITE
+    private val gray = Color.LTGRAY
+    private val green = Color.rgb(0, 220, 120)
+    private val red = Color.rgb(255, 80, 80)
+    private val orange = Color.rgb(255, 170, 0)
+
+    // =========================
+    // Activity
+    // =========================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,15 +118,20 @@ class MainActivity : Activity() {
         window.statusBarColor = bg
         window.navigationBarColor = bg
 
-        loadSettings()
         buildInterface()
-        fetchGoldPrice()
+        loadSettings()
+
+        handler.postDelayed(updateRunnable, 1000)
     }
 
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
+        handler.removeCallbacks(updateRunnable)
         super.onDestroy()
     }
+
+    // =========================
+    // Interface
+    // =========================
 
     private fun buildInterface() {
 
@@ -86,353 +139,161 @@ class MainActivity : Activity() {
 
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
-        root.setPadding(24, 30, 24, 30)
+        root.setPadding(24, 24, 24, 40)
         root.setBackgroundColor(bg)
 
         scroll.addView(root)
 
-        val title = makeText(
-            "GOLD BOT",
-            30f,
-            gold,
-            true
-        )
+        val title = TextView(this)
+        title.text = "GOLD BOT"
+        title.textSize = 30f
+        title.setTextColor(gold)
         title.gravity = Gravity.CENTER
+        title.setPadding(0, 10, 0, 5)
+
         root.addView(title)
 
-        addSpace(root, 12)
+        val subtitle = TextView(this)
+        subtitle.text = "AI XAU/USD Trading Assistant"
+        subtitle.textSize = 14f
+        subtitle.setTextColor(gray)
+        subtitle.gravity = Gravity.CENTER
 
-        statusText = makeText(
-            "● البوت متوقف",
-            18f,
-            red,
-            true
-        )
+        root.addView(subtitle)
+
+        root.addView(space(15))
+
+        // Status
+        statusText = TextView(this)
+        statusText.text = "البوت متوقف"
+        statusText.textSize = 19f
+        statusText.setTextColor(red)
         statusText.gravity = Gravity.CENTER
+        statusText.setPadding(15, 15, 15, 15)
+        statusText.setBackgroundColor(card)
+
         root.addView(statusText)
 
-        addSpace(root, 12)
+        root.addView(space(12))
 
-        val priceCard = createCard()
-
-        val priceTitle = makeText(
-            "XAU/USD",
-            18f,
-            gray,
-            true
-        )
-
-        priceText = makeText(
-            "جاري جلب السعر...",
-            28f,
-            gold,
-            true
-        )
+        // Price
+        priceText = TextView(this)
+        priceText.text = "XAU/USD\n--"
+        priceText.textSize = 28f
+        priceText.setTextColor(gold)
         priceText.gravity = Gravity.CENTER
+        priceText.setPadding(15, 25, 15, 25)
+        priceText.setBackgroundColor(card)
 
-        priceCard.addView(priceTitle)
-        priceCard.addView(priceText)
+        root.addView(priceText)
 
-        root.addView(priceCard)
+        root.addView(space(12))
 
-        addSpace(root, 12)
+        // Main buttons
+        startButton = Button(this)
+        startButton.text = "تشغيل البوت"
 
-        val signalCard = createCard()
-
-        val signalTitle = makeText(
-            "إشارة التداول",
-            18f,
-            white,
-            true
-        )
-
-        signalText = makeText(
-            "WAIT",
-            30f,
-            gold,
-            true
-        )
-        signalText.gravity = Gravity.CENTER
-
-        signalCard.addView(signalTitle)
-        signalCard.addView(signalText)
-
-        root.addView(signalCard)
-
-        addSpace(root, 12)
-
-        val indicatorCard = createCard()
-
-        indicatorText = makeText(
-            "EMA 9: --\nEMA 21: --\nRSI 14: --\nMACD: --\nSL: --\nTP: --",
-            17f,
-            white,
-            false
-        )
-
-        indicatorCard.addView(indicatorText)
-        root.addView(indicatorCard)
-
-        addSpace(root, 12)
-
-        val startButton = Button(this)
-        startButton.text = "تشغيل / إيقاف البوت"
         startButton.setOnClickListener {
             toggleBot()
         }
 
         root.addView(startButton)
 
-        val analyzeButton = Button(this)
-        analyzeButton.text = "تحليل السوق الآن"
-        analyzeButton.setOnClickListener {
-            analyzeMarket()
-        }
+        paperButton = Button(this)
+        paperButton.text = "Paper Trading: OFF"
 
-        root.addView(analyzeButton)
-
-        val paperButton = Button(this)
-        paperButton.text = "فتح صفقة تجريبية"
         paperButton.setOnClickListener {
-            managePaperTrade()
+            paperTrading = !paperTrading
+
+            paperButton.text =
+                if (paperTrading) {
+                    "Paper Trading: ON"
+                } else {
+                    "Paper Trading: OFF"
+                }
+
+            addLog(
+                if (paperTrading)
+                    "تم تشغيل التداول التجريبي"
+                else
+                    "تم إيقاف التداول التجريبي"
+            )
         }
 
         root.addView(paperButton)
 
-        val settingsButton = Button(this)
-        settingsButton.text = "الإعدادات"
-        settingsButton.setOnClickListener {
-            showSettings()
-        }
+        root.addView(space(10))
 
-        root.addView(settingsButton)
+        // Signal
+        val signalTitle = sectionTitle("إشارة السوق")
+        root.addView(signalTitle)
 
-        val telegramButton = Button(this)
-        telegramButton.text = "إرسال الإشارة إلى Telegram"
-        telegramButton.setOnClickListener {
-            sendTelegram()
-        }
+        signalText = TextView(this)
+        signalText.text = "WAIT"
+        signalText.textSize = 30f
+        signalText.setTextColor(orange)
+        signalText.gravity = Gravity.CENTER
+        signalText.setPadding(15, 25, 15, 25)
+        signalText.setBackgroundColor(card)
 
-        root.addView(telegramButton)
+        root.addView(signalText)
 
-        addSpace(root, 12)
+        root.addView(space(12))
 
-        val accountCard = createCard()
+        // Indicators
+        root.addView(sectionTitle("تحليل السوق"))
 
-        accountText = makeText(
-            "",
-            17f,
-            white,
-            false
-        )
+        indicatorsText = TextView(this)
+        indicatorsText.text =
+            "EMA 9: --\n" +
+            "EMA 21: --\n" +
+            "RSI: --\n" +
+            "MACD: --\n" +
+            "الاتجاه: --\n" +
+            "عدد الأسعار: 0"
 
-        accountCard.addView(accountText)
-        root.addView(accountCard)
+        indicatorsText.textSize = 17f
+        indicatorsText.setTextColor(white)
+        indicatorsText.setPadding(20, 20, 20, 20)
+        indicatorsText.setBackgroundColor(card)
 
-        addSpace(root, 12)
+        root.addView(indicatorsText)
 
-        val logTitle = makeText(
-            "السجل",
-            18f,
-            gold,
-            true
-        )
+        root.addView(space(12))
 
-        root.addView(logTitle)
+        // SL / TP
+        root.addView(sectionTitle("إدارة الصفقة"))
 
-        logText = makeText(
-            "GoldBot بدأ العمل.\n",
-            14f,
-            gray,
-            false
-        )
+        tradeText = TextView(this)
+        tradeText.text =
+            "Entry: --\n" +
+            "Stop Loss: --\n" +
+            "Take Profit: --\n" +
+            "Lot/Size: --\n" +
+            "Risk: 1%"
 
-        root.addView(logText)
+        tradeText.textSize = 17f
+        tradeText.setTextColor(white)
+        tradeText.setPadding(20, 20, 20, 20)
+        tradeText.setBackgroundColor(card)
 
-        updateAccountUI()
+        root.addView(tradeText)
 
-        setContentView(scroll)
-    }
+        root.addView(space(12))
 
-    private fun fetchGoldPrice() {
+        // Account
+        root.addView(sectionTitle("الحساب التجريبي"))
 
-        thread {
+        balanceText = TextView(this)
+        balanceText.text =
+            "الرصيد: 10000.00 $\n" +
+            "الصفقة: لا توجد"
 
-            try {
+        balanceText.textSize = 17f
+        balanceText.setTextColor(gray)
+        balanceText.setPadding(20, 20, 20, 20)
+        balanceText.setBackgroundColor(card)
 
-                val url = URL("https://api.gold-api.com/price/XAU")
+        root.addView(balanceText)
 
-                val connection =
-                    url.openConnection() as HttpURLConnection
-
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
-
-                val code = connection.responseCode
-
-                if (code != 200) {
-                    throw Exception("HTTP $code")
-                }
-
-                val text =
-                    connection.inputStream
-                        .bufferedReader()
-                        .use { it.readText() }
-
-                val json = JSONObject(text)
-
-                val price = json.getDouble("price")
-
-                runOnUiThread {
-                    updatePrice(price)
-                }
-
-                connection.disconnect()
-
-            } catch (e: Exception) {
-
-                runOnUiThread {
-                    statusText.text = "● خطأ في الاتصال"
-                    statusText.setTextColor(red)
-
-                    addLog("فشل جلب السعر: ${e.message}")
-                }
-            }
-        }
-    }
-
-    private fun updatePrice(price: Double) {
-
-        currentPrice = price
-
-        prices.add(price)
-
-        if (prices.size > 200) {
-            prices.removeAt(0)
-        }
-
-        priceText.text =
-            String.format(Locale.US, "%.2f $", price)
-
-        statusText.text =
-            if (botRunning) "● البوت يعمل"
-            else "● البوت متوقف"
-
-        statusText.setTextColor(
-            if (botRunning) green else red
-        )
-
-        calculateIndicators()
-
-        if (botRunning) {
-            managePaperTrade()
-        }
-    }
-
-    private fun calculateIndicators() {
-
-        if (prices.size < 10) {
-
-            indicatorText.text =
-                "الأسعار المتاحة: ${prices.size}\n" +
-                "نحتاج بيانات أكثر للتحليل."
-
-            signalText.text = "WAIT"
-            signalText.setTextColor(gold)
-
-            return
-        }
-
-        val ema9 = calculateEMA(prices, 9)
-        val ema21 =
-            if (prices.size >= 21)
-                calculateEMA(prices, 21)
-            else
-                ema9
-
-        val rsi =
-            if (prices.size >= 15)
-                calculateRSI(prices, 14)
-            else
-                50.0
-
-        val macd = calculateMACD(prices)
-
-        val signal = generateSignal(
-            ema9,
-            ema21,
-            rsi,
-            macd
-        )
-
-        val sl = calculateSL(signal)
-        val tp = calculateTP(signal)
-
-        indicatorText.text =
-            "EMA 9: ${format(ema9)}\n" +
-            "EMA 21: ${format(ema21)}\n" +
-            "RSI 14: ${format(rsi)}\n" +
-            "MACD: ${format(macd)}\n" +
-            "SL: ${if (sl > 0) format(sl) else "--"}\n" +
-            "TP: ${if (tp > 0) format(tp) else "--"}"
-
-        showSignal(signal)
-    }
-
-    private fun calculateEMA(
-        data: List<Double>,
-        period: Int
-    ): Double {
-
-        if (data.isEmpty()) return 0.0
-
-        val actualPeriod =
-            min(period, data.size)
-
-        var ema = data.take(actualPeriod).average()
-
-        val multiplier =
-            2.0 / (actualPeriod + 1)
-
-        for (i in actualPeriod until data.size) {
-
-            ema =
-                (data[i] - ema) *
-                multiplier + ema
-        }
-
-        return ema
-    }
-
-    private fun calculateRSI(
-        data: List<Double>,
-        period: Int
-    ): Double {
-
-        if (data.size <= period) return 50.0
-
-        var gains = 0.0
-        var losses = 0.0
-
-        val start = data.size - period
-
-        for (i in start until data.size) {
-
-            if (i == 0) continue
-
-            val change =
-                data[i] - data[i - 1]
-
-            if (change > 0) {
-                gains += change
-            } else {
-                losses += abs(change)
-            }
-        }
-
-        if (losses == 0.0) return 100.0
-
-        val rs = gains / losses
-
-        return 100.0 - (100.0 / (1.0
+        root.addView(space(10
