@@ -557,6 +557,20 @@ class MainActivity : Activity() {
 
     private fun analyzeMarket() {
 
+    if (prices.size < 3) {
+        signalText.text = "⏳ نحتاج 3 قراءات على الأقل"
+        signalText.setTextColor(gold)
+        fetchGoldPrice()
+        return
+    }
+
+    calculateTrend()
+
+    activityText.text =
+        activityText.text.toString() +
+        "\n✓ تم تحليل حركة السعر"
+}
+
         if (prices.size < 3) {
 
             signalText.text =
