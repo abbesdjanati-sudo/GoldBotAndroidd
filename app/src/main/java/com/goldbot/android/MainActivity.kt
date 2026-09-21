@@ -13,17 +13,20 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.min
 
 class MainActivity : Activity() {
 
     private lateinit var priceText: TextView
     private lateinit var statusText: TextView
     private lateinit var historyText: TextView
+    private lateinit var analysisText: TextView
+    private lateinit var signalText: TextView
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private val history =
-        ArrayList<Double>()
+    private val prices = ArrayList<Double>()
 
     private val timer = object : Runnable {
 
@@ -62,8 +65,7 @@ class MainActivity : Activity() {
 
     private fun buildInterface() {
 
-        val root =
-            LinearLayout(this)
+        val root = LinearLayout(this)
 
         root.orientation =
             LinearLayout.VERTICAL
@@ -72,114 +74,161 @@ class MainActivity : Activity() {
             Gravity.CENTER_HORIZONTAL
 
         root.setPadding(
-            30,
-            30,
-            30,
-            30
+            25,
+            25,
+            25,
+            40
         )
 
         root.setBackgroundColor(
             Color.rgb(15, 18, 25)
         )
 
-        val title =
-            TextView(this)
+        val title = TextView(this)
 
-        title.text =
-            "GOLD BOT"
-
-        title.textSize =
-            30f
-
-        title.setTextColor(
-            Color.YELLOW
-        )
-
-        title.gravity =
-            Gravity.CENTER
+        title.text = "GOLD BOT"
+        title.textSize = 30f
+        title.setTextColor(Color.YELLOW)
+        title.gravity = Gravity.CENTER
 
         root.addView(title)
 
-        val subtitle =
-            TextView(this)
+        val subtitle = TextView(this)
 
-        subtitle.text =
-            "XAU/USD"
-
-        subtitle.textSize =
-            18f
-
-        subtitle.setTextColor(
-            Color.LTGRAY
-        )
-
-        subtitle.gravity =
-            Gravity.CENTER
+        subtitle.text = "XAU/USD"
+        subtitle.textSize = 18f
+        subtitle.setTextColor(Color.LTGRAY)
+        subtitle.gravity = Gravity.CENTER
 
         root.addView(subtitle)
 
-        priceText =
-            TextView(this)
+        priceText = TextView(this)
 
         priceText.text =
             "XAU/USD\n--"
 
-        priceText.textSize =
-            30f
-
-        priceText.setTextColor(
-            Color.YELLOW
-        )
-
-        priceText.gravity =
-            Gravity.CENTER
+        priceText.textSize = 30f
+        priceText.setTextColor(Color.YELLOW)
+        priceText.gravity = Gravity.CENTER
 
         priceText.setPadding(
             20,
-            35,
+            30,
             20,
-            35
+            30
         )
 
         root.addView(priceText)
 
-        statusText =
-            TextView(this)
+        statusText = TextView(this)
 
         statusText.text =
             "جاري الاتصال..."
 
-        statusText.textSize =
-            18f
-
-        statusText.setTextColor(
-            Color.WHITE
-        )
-
-        statusText.gravity =
-            Gravity.CENTER
+        statusText.textSize = 18f
+        statusText.setTextColor(Color.WHITE)
+        statusText.gravity = Gravity.CENTER
 
         statusText.setPadding(
+            20,
+            15,
+            20,
+            15
+        )
+
+        root.addView(statusText)
+
+        val refreshButton =
+            Button(this)
+
+        refreshButton.text =
+            "تحديث السعر الآن"
+
+        refreshButton.setOnClickListener {
+            getGoldPrice()
+        }
+
+        root.addView(refreshButton)
+
+        val signalTitle =
+            TextView(this)
+
+        signalTitle.text =
+            "إشارة السوق"
+
+        signalTitle.textSize = 22f
+        signalTitle.setTextColor(Color.YELLOW)
+        signalTitle.gravity = Gravity.CENTER
+
+        signalTitle.setPadding(
+            10,
+            25,
+            10,
+            10
+        )
+
+        root.addView(signalTitle)
+
+        signalText =
+            TextView(this)
+
+        signalText.text =
+            "WAIT"
+
+        signalText.textSize = 30f
+        signalText.setTextColor(Color.rgb(255, 170, 0))
+        signalText.gravity = Gravity.CENTER
+
+        signalText.setPadding(
             20,
             20,
             20,
             20
         )
 
-        root.addView(statusText)
+        root.addView(signalText)
 
-        val refresh =
-            Button(this)
+        val analysisTitle =
+            TextView(this)
 
-        refresh.text =
-            "تحديث السعر الآن"
+        analysisTitle.text =
+            "التحليل الفني"
 
-        refresh.setOnClickListener {
+        analysisTitle.textSize = 22f
+        analysisTitle.setTextColor(Color.YELLOW)
+        analysisTitle.gravity = Gravity.CENTER
 
-            getGoldPrice()
-        }
+        analysisTitle.setPadding(
+            10,
+            25,
+            10,
+            10
+        )
 
-        root.addView(refresh)
+        root.addView(analysisTitle)
+
+        analysisText =
+            TextView(this)
+
+        analysisText.text =
+            "EMA 9: --\n" +
+            "EMA 21: --\n" +
+            "RSI 14: --\n" +
+            "MACD: --\n" +
+            "Trend: --"
+
+        analysisText.textSize = 17f
+        analysisText.setTextColor(Color.WHITE)
+        analysisText.gravity = Gravity.CENTER
+
+        analysisText.setPadding(
+            20,
+            20,
+            20,
+            20
+        )
+
+        root.addView(analysisText)
 
         val historyTitle =
             TextView(this)
@@ -187,19 +236,13 @@ class MainActivity : Activity() {
         historyTitle.text =
             "آخر الأسعار"
 
-        historyTitle.textSize =
-            22f
-
-        historyTitle.setTextColor(
-            Color.YELLOW
-        )
-
-        historyTitle.gravity =
-            Gravity.CENTER
+        historyTitle.textSize = 22f
+        historyTitle.setTextColor(Color.YELLOW)
+        historyTitle.gravity = Gravity.CENTER
 
         historyTitle.setPadding(
             10,
-            30,
+            25,
             10,
             10
         )
@@ -212,15 +255,9 @@ class MainActivity : Activity() {
         historyText.text =
             "لا توجد بيانات بعد"
 
-        historyText.textSize =
-            16f
-
-        historyText.setTextColor(
-            Color.WHITE
-        )
-
-        historyText.gravity =
-            Gravity.CENTER
+        historyText.textSize = 16f
+        historyText.setTextColor(Color.WHITE)
+        historyText.gravity = Gravity.CENTER
 
         root.addView(historyText)
 
@@ -238,7 +275,7 @@ class MainActivity : Activity() {
         Thread {
 
             var connection:
-                    HttpURLConnection? = null
+                HttpURLConnection? = null
 
             try {
 
@@ -249,7 +286,7 @@ class MainActivity : Activity() {
 
                 connection =
                     url.openConnection()
-                            as HttpURLConnection
+                        as HttpURLConnection
 
                 connection.requestMethod =
                     "GET"
@@ -302,7 +339,7 @@ class MainActivity : Activity() {
                         (
                             e.message
                                 ?: "خطأ غير معروف"
-                        )
+                            )
                 }
 
             } finally {
@@ -321,11 +358,11 @@ class MainActivity : Activity() {
             return
         }
 
-        history.add(price)
+        prices.add(price)
 
-        if (history.size > 20) {
+        if (prices.size > 100) {
 
-            history.removeAt(0)
+            prices.removeAt(0)
         }
 
         priceText.text =
@@ -337,32 +374,311 @@ class MainActivity : Activity() {
 
         statusText.text =
             "متصل ✓\n" +
-            "تحديث تلقائي كل 15 ثانية"
+            "تحديث كل 15 ثانية"
 
         updateHistory()
+
+        calculateIndicators()
     }
 
     private fun updateHistory() {
 
-        val text =
+        if (prices.isEmpty()) {
+            return
+        }
+
+        val result =
             StringBuilder()
 
         for (
-            i in history.indices.reversed()
+            i in prices.indices.reversed()
         ) {
 
-            text.append(
+            result.append(
                 String.format(
                     Locale.US,
                     "%.2f $",
-                    history[i]
+                    prices[i]
                 )
             )
 
-            text.append("\n")
+            result.append("\n")
+
+            if (prices.size - i >= 20) {
+                break
+            }
         }
 
         historyText.text =
-            text.toString()
+            result.toString()
+    }
+
+    private fun calculateIndicators() {
+
+        if (prices.size < 26) {
+
+            signalText.text =
+                "WAIT"
+
+            signalText.setTextColor(
+                Color.rgb(255, 170, 0)
+            )
+
+            analysisText.text =
+                "EMA 9: --\n" +
+                "EMA 21: --\n" +
+                "RSI 14: --\n" +
+                "MACD: --\n" +
+                "Trend: جمع البيانات...\n" +
+                "عدد الأسعار: ${prices.size}"
+
+            return
+        }
+
+        val ema9 =
+            calculateEma(
+                prices,
+                9
+            )
+
+        val ema21 =
+            calculateEma(
+                prices,
+                21
+            )
+
+        val rsi =
+            calculateRsi(
+                prices,
+                14
+            )
+
+        val macd =
+            calculateMacd(prices)
+
+        val trend =
+            if (ema9 > ema21) {
+                "صاعد"
+            } else if (ema9 < ema21) {
+                "هابط"
+            } else {
+                "محايد"
+            }
+
+        val signal =
+            calculateSignal(
+                ema9,
+                ema21,
+                rsi,
+                macd
+            )
+
+        analysisText.text =
+            String.format(
+                Locale.US,
+                "EMA 9: %.2f\n" +
+                "EMA 21: %.2f\n" +
+                "RSI 14: %.2f\n" +
+                "MACD: %.4f\n" +
+                "Trend: %s\n" +
+                "عدد الأسعار: %d",
+                ema9,
+                ema21,
+                rsi,
+                macd,
+                trend,
+                prices.size
+            )
+
+        signalText.text =
+            signal
+
+        if (signal == "BUY") {
+
+            signalText.setTextColor(
+                Color.rgb(0, 220, 120)
+            )
+
+        } else if (signal == "SELL") {
+
+            signalText.setTextColor(
+                Color.rgb(255, 80, 80)
+            )
+
+        } else {
+
+            signalText.setTextColor(
+                Color.rgb(255, 170, 0)
+            )
+        }
+    }
+
+    private fun calculateEma(
+        data: List<Double>,
+        period: Int
+    ): Double {
+
+        if (data.isEmpty()) {
+            return 0.0
+        }
+
+        val count =
+            min(
+                period,
+                data.size
+            )
+
+        var ema = 0.0
+
+        for (i in 0 until count) {
+            ema += data[i]
+        }
+
+        ema /= count.toDouble()
+
+        val multiplier =
+            2.0 /
+            (period + 1.0)
+
+        for (
+            i in count until data.size
+        ) {
+
+            ema =
+                (
+                    (data[i] - ema) *
+                    multiplier
+                ) + ema
+        }
+
+        return ema
+    }
+
+    private fun calculateRsi(
+        data: List<Double>,
+        period: Int
+    ): Double {
+
+        if (data.size <= period) {
+            return 50.0
+        }
+
+        var gains = 0.0
+        var losses = 0.0
+
+        val start =
+            data.size - period
+
+        for (
+            i in start until data.size
+        ) {
+
+            val change =
+                data[i] - data[i - 1]
+
+            if (change > 0) {
+
+                gains += change
+
+            } else {
+
+                losses += abs(change)
+            }
+        }
+
+        if (losses == 0.0) {
+            return 100.0
+        }
+
+        val averageGain =
+            gains / period
+
+        val averageLoss =
+            losses / period
+
+        val rs =
+            averageGain / averageLoss
+
+        return 100.0 -
+            (
+                100.0 /
+                (1.0 + rs)
+            )
+    }
+
+    private fun calculateMacd(
+        data: List<Double>
+    ): Double {
+
+        if (data.size < 26) {
+            return 0.0
+        }
+
+        val ema12 =
+            calculateEma(
+                data,
+                12
+            )
+
+        val ema26 =
+            calculateEma(
+                data,
+                26
+            )
+
+        return ema12 - ema26
+    }
+
+    private fun calculateSignal(
+        ema9: Double,
+        ema21: Double,
+        rsi: Double,
+        macd: Double
+    ): String {
+
+        var buy = 0
+        var sell = 0
+
+        if (ema9 > ema21) {
+
+            buy++
+
+        } else if (ema9 < ema21) {
+
+            sell++
+        }
+
+        if (
+            rsi > 50.0 &&
+            rsi < 70.0
+        ) {
+
+            buy++
+
+        } else if (
+            rsi < 50.0 &&
+            rsi > 30.0
+        ) {
+
+            sell++
+        }
+
+        if (macd > 0.0) {
+
+            buy++
+
+        } else if (macd < 0.0) {
+
+            sell++
+        }
+
+        return when {
+
+            buy >= 3 -> "BUY"
+
+            sell >= 3 -> "SELL"
+
+            else -> "WAIT"
+        }
     }
 }
