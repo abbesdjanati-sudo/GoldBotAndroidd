@@ -2,6 +2,7 @@ package com.goldbot.android
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
@@ -37,7 +38,7 @@ class MainActivity : Activity() {
     private val red = Color.rgb(225, 75, 75)
     private val gold = Color.rgb(230, 180, 70)
 
-    private val handler = android.os.Handler(mainLooper)
+    private val handler = Handler(mainLooper)
 
     private val updateTask = object : Runnable {
         override fun run() {
@@ -55,7 +56,6 @@ class MainActivity : Activity() {
         buildInterface()
 
         fetchGoldPrice()
-
         handler.postDelayed(updateTask, 15000)
     }
 
@@ -73,52 +73,35 @@ class MainActivity : Activity() {
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(22, 20, 22, 30)
 
-        val title = TextView(this)
-        title.text = "◉  GoldBot"
-        title.textSize = 28f
+        val title = makeText("◉ GoldBot", 28f, gold)
         title.setTypeface(null, Typeface.BOLD)
-        title.setTextColor(gold)
-
         root.addView(title)
 
         addSpace(root, 20)
 
-        // الحالة
         val statusCard = createCard()
 
         statusCard.addView(
             makeText("● حالة الروبوت", 15f, gray)
         )
 
-        statusText = makeText(
-            "● متوقف",
-            24f,
-            red
-        )
-
+        statusText = makeText("● متوقف", 24f, red)
         statusText.setTypeface(null, Typeface.BOLD)
-
         statusCard.addView(statusText)
 
         startButton = Button(this)
         startButton.text = "▶ تشغيل الروبوت"
         startButton.setTextColor(white)
         startButton.setBackgroundColor(green)
-
         startButton.setOnClickListener {
             toggleBot()
         }
 
-        statusCard.addView(
-            startButton,
-            buttonParams()
-        )
-
+        statusCard.addView(startButton, buttonParams())
         root.addView(statusCard)
 
         addSpace(root, 14)
 
-        // الذهب
         val marketCard = createCard()
 
         marketCard.addView(
@@ -129,45 +112,24 @@ class MainActivity : Activity() {
             makeText("XAU/USD", 24f, white)
         )
 
-        priceText = makeText(
-            "جاري جلب السعر...",
-            30f,
-            gold
-        )
-
+        priceText = makeText("جاري جلب السعر...", 30f, gold)
         priceText.setTypeface(null, Typeface.BOLD)
-
         marketCard.addView(priceText)
 
-        changeText = makeText(
-            "التغير: --",
-            17f,
-            gray
-        )
-
+        changeText = makeText("التغير: --", 17f, gray)
         marketCard.addView(changeText)
 
-        updateText = makeText(
-            "آخر تحديث: --",
-            14f,
-            gray
-        )
-
+        updateText = makeText("آخر تحديث: --", 14f, gray)
         marketCard.addView(updateText)
 
         marketCard.addView(
-            makeText(
-                "● بيانات الإنترنت",
-                14f,
-                green
-            )
+            makeText("● بيانات الإنترنت", 14f, green)
         )
 
         root.addView(marketCard)
 
         addSpace(root, 14)
 
-        // التحليل
         val analysisCard = createCard()
 
         analysisCard.addView(
@@ -179,9 +141,7 @@ class MainActivity : Activity() {
             22f,
             gold
         )
-
         trendText.setTypeface(null, Typeface.BOLD)
-
         analysisCard.addView(trendText)
 
         signalText = makeText(
@@ -189,22 +149,16 @@ class MainActivity : Activity() {
             18f,
             gold
         )
-
         analysisCard.addView(signalText)
 
         analysisCard.addView(
-            makeText(
-                "M1     M5     M15     H1     H4",
-                15f,
-                gray
-            )
+            makeText("M1     M5     M15     H1     H4", 15f, gray)
         )
 
         root.addView(analysisCard)
 
         addSpace(root, 14)
 
-        // الحساب
         val accountCard = createCard()
 
         accountCard.addView(
@@ -212,26 +166,17 @@ class MainActivity : Activity() {
         )
 
         accountCard.addView(
-            makeText(
-                "الرصيد: --",
-                22f,
-                white
-            )
+            makeText("الرصيد: --", 22f, white)
         )
 
         accountCard.addView(
-            makeText(
-                "الربح اليومي: --",
-                17f,
-                gray
-            )
+            makeText("الربح اليومي: --", 17f, gray)
         )
 
         root.addView(accountCard)
 
         addSpace(root, 14)
 
-        // التحكم
         val actionsCard = createCard()
 
         actionsCard.addView(
@@ -241,72 +186,47 @@ class MainActivity : Activity() {
         val refreshButton = Button(this)
         refreshButton.text = "🔄 تحديث سعر الذهب"
         refreshButton.setTextColor(white)
-        refreshButton.setBackgroundColor(
-            Color.rgb(55, 65, 85)
-        )
-
+        refreshButton.setBackgroundColor(Color.rgb(55, 65, 85))
         refreshButton.setOnClickListener {
             fetchGoldPrice()
         }
 
-        actionsCard.addView(
-            refreshButton,
-            buttonParams()
-        )
+        actionsCard.addView(refreshButton, buttonParams())
 
         val analyzeButton = Button(this)
         analyzeButton.text = "🔍 تحليل XAU/USD"
         analyzeButton.setTextColor(white)
-        analyzeButton.setBackgroundColor(
-            Color.rgb(55, 65, 85)
-        )
-
+        analyzeButton.setBackgroundColor(Color.rgb(55, 65, 85))
         analyzeButton.setOnClickListener {
             analyzeMarket()
         }
 
-        actionsCard.addView(
-            analyzeButton,
-            buttonParams()
-        )
+        actionsCard.addView(analyzeButton, buttonParams())
 
         val mt5Button = Button(this)
         mt5Button.text = "⚙️ إعدادات MT5"
         mt5Button.setTextColor(white)
-        mt5Button.setBackgroundColor(
-            Color.rgb(55, 65, 85)
-        )
-
+        mt5Button.setBackgroundColor(Color.rgb(55, 65, 85))
         mt5Button.setOnClickListener {
             showMt5Settings()
         }
 
-        actionsCard.addView(
-            mt5Button,
-            buttonParams()
-        )
+        actionsCard.addView(mt5Button, buttonParams())
 
         val telegramButton = Button(this)
         telegramButton.text = "🔔 Telegram"
         telegramButton.setTextColor(white)
-        telegramButton.setBackgroundColor(
-            Color.rgb(55, 65, 85)
-        )
-
+        telegramButton.setBackgroundColor(Color.rgb(55, 65, 85))
         telegramButton.setOnClickListener {
             toast("Telegram سيتم ربطه لاحقًا")
         }
 
-        actionsCard.addView(
-            telegramButton,
-            buttonParams()
-        )
+        actionsCard.addView(telegramButton, buttonParams())
 
         root.addView(actionsCard)
 
         addSpace(root, 14)
 
-        // سجل
         val logCard = createCard()
 
         logCard.addView(
@@ -320,7 +240,6 @@ class MainActivity : Activity() {
         )
 
         logCard.addView(activityText)
-
         root.addView(logCard)
 
         addSpace(root, 20)
@@ -332,17 +251,11 @@ class MainActivity : Activity() {
         )
 
         footer.gravity = Gravity.CENTER
-
         root.addView(footer)
 
         scroll.addView(root)
-
         setContentView(scroll)
     }
-
-    // ==============================
-    // السعر الحقيقي
-    // ==============================
 
     private fun fetchGoldPrice() {
 
@@ -368,11 +281,9 @@ class MainActivity : Activity() {
                 val code = connection.responseCode
 
                 if (code != 200) {
-
                     runOnUiThread {
                         showError("HTTP $code")
                     }
-
                     return@thread
                 }
 
@@ -389,13 +300,9 @@ class MainActivity : Activity() {
                     json.optDouble("price", 0.0)
 
                 if (price <= 0) {
-
                     runOnUiThread {
-                        showError(
-                            "السعر غير موجود"
-                        )
+                        showError("السعر غير موجود")
                     }
-
                     return@thread
                 }
 
@@ -406,9 +313,7 @@ class MainActivity : Activity() {
             } catch (e: Exception) {
 
                 runOnUiThread {
-                    showError(
-                        "تعذر الاتصال بالإنترنت"
-                    )
+                    showError("تعذر الاتصال بالإنترنت")
                 }
 
             } finally {
@@ -435,8 +340,7 @@ class MainActivity : Activity() {
                 price
             )
 
-        updateText.text =
-            "آخر تحديث: الآن"
+        updateText.text = "آخر تحديث: الآن"
 
         if (previousPrice > 0) {
 
@@ -444,13 +348,10 @@ class MainActivity : Activity() {
                 currentPrice - previousPrice
 
             val percent =
-                difference /
-                        previousPrice *
-                        100.0
+                difference / previousPrice * 100.0
 
             val sign =
-                if (difference >= 0) "+"
-                else ""
+                if (difference >= 0) "+" else ""
 
             changeText.text =
                 String.format(
@@ -462,10 +363,7 @@ class MainActivity : Activity() {
                 )
 
             changeText.setTextColor(
-                if (difference >= 0)
-                    green
-                else
-                    red
+                if (difference >= 0) green else red
             )
         }
 
@@ -482,10 +380,6 @@ class MainActivity : Activity() {
 
         calculateTrend()
     }
-
-    // ==============================
-    // الاتجاه
-    // ==============================
 
     private fun calculateTrend() {
 
@@ -551,25 +445,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // ==============================
-    // التحليل
-    // ==============================
-
     private fun analyzeMarket() {
-
-    if (prices.size < 3) {
-        signalText.text = "⏳ نحتاج 3 قراءات على الأقل"
-        signalText.setTextColor(gold)
-        fetchGoldPrice()
-        return
-    }
-
-    calculateTrend()
-
-    activityText.text =
-        activityText.text.toString() +
-        "\n✓ تم تحليل حركة السعر"
-}
 
         if (prices.size < 3) {
 
@@ -586,13 +462,9 @@ class MainActivity : Activity() {
         calculateTrend()
 
         activityText.text =
-    activityText.text.toString() +
-    "  "\n✓ تم تحليل حركة السعر"
+            activityText.text.toString() +
+            "\n✓ تم تحليل حركة السعر"
     }
-
-    // ==============================
-    // تشغيل الروبوت
-    // ==============================
 
     private fun toggleBot() {
 
@@ -600,14 +472,10 @@ class MainActivity : Activity() {
 
         if (botRunning) {
 
-            statusText.text =
-                "● يعمل الآن"
-
+            statusText.text = "● يعمل الآن"
             statusText.setTextColor(green)
 
-            startButton.text =
-                "■ إيقاف الروبوت"
-
+            startButton.text = "■ إيقاف الروبوت"
             startButton.setBackgroundColor(red)
 
             activityText.text =
@@ -616,14 +484,10 @@ class MainActivity : Activity() {
 
         } else {
 
-            statusText.text =
-                "● متوقف"
-
+            statusText.text = "● متوقف"
             statusText.setTextColor(red)
 
-            startButton.text =
-                "▶ تشغيل الروبوت"
-
+            startButton.text = "▶ تشغيل الروبوت"
             startButton.setBackgroundColor(green)
 
             activityText.text =
@@ -631,33 +495,18 @@ class MainActivity : Activity() {
         }
     }
 
-    // ==============================
-    // MT5
-    // ==============================
-
     private fun showMt5Settings() {
 
-        val layout =
-            LinearLayout(this)
+        val layout = LinearLayout(this)
 
         layout.orientation =
             LinearLayout.VERTICAL
 
-        layout.setPadding(
-            30,
-            20,
-            30,
-            20
-        )
-
+        layout.setPadding(30, 20, 30, 20)
         layout.setBackgroundColor(bg)
 
         layout.addView(
-            makeText(
-                "⚙️ إعدادات MT5",
-                25f,
-                white
-            )
+            makeText("⚙️ إعدادات MT5", 25f, white)
         )
 
         addSpace(layout, 15)
@@ -666,7 +515,6 @@ class MainActivity : Activity() {
         server.hint = "MT5 Server"
         server.setTextColor(white)
         server.setHintTextColor(gray)
-
         layout.addView(server)
 
         val login = EditText(this)
@@ -674,7 +522,6 @@ class MainActivity : Activity() {
         login.inputType = 2
         login.setTextColor(white)
         login.setHintTextColor(gray)
-
         layout.addView(login)
 
         val password = EditText(this)
@@ -682,7 +529,6 @@ class MainActivity : Activity() {
         password.inputType = 129
         password.setTextColor(white)
         password.setHintTextColor(gray)
-
         layout.addView(password)
 
         addSpace(layout, 15)
@@ -693,10 +539,7 @@ class MainActivity : Activity() {
         test.setBackgroundColor(green)
 
         test.setOnClickListener {
-
-            toast(
-                "MT5 الحقيقي يحتاج Desktop أو VPS"
-            )
+            toast("MT5 الحقيقي يحتاج Desktop أو VPS")
         }
 
         layout.addView(test)
@@ -704,14 +547,12 @@ class MainActivity : Activity() {
         val close = Button(this)
         close.text = "رجوع"
         close.setTextColor(white)
-
         layout.addView(close)
 
         val dialog =
             android.app.Dialog(this)
 
         dialog.setContentView(layout)
-
         dialog.show()
 
         close.setOnClickListener {
@@ -719,25 +560,14 @@ class MainActivity : Activity() {
         }
     }
 
-    // ==============================
-    // أدوات
-    // ==============================
-
     private fun createCard(): LinearLayout {
 
-        val layout =
-            LinearLayout(this)
+        val layout = LinearLayout(this)
 
         layout.orientation =
             LinearLayout.VERTICAL
 
-        layout.setPadding(
-            20,
-            18,
-            20,
-            18
-        )
-
+        layout.setPadding(20, 18, 20, 18)
         layout.setBackgroundColor(card)
 
         return layout
@@ -749,25 +579,19 @@ class MainActivity : Activity() {
         color: Int
     ): TextView {
 
-        val view =
-            TextView(this)
+        val view = TextView(this)
 
         view.text = text
         view.textSize = size
         view.setTextColor(color)
 
-        view.setPadding(
-            0,
-            5,
-            0,
-            5
-        )
+        view.setPadding(0, 5, 0, 5)
 
         return view
     }
 
     private fun buttonParams():
-            LinearLayout.LayoutParams {
+        LinearLayout.LayoutParams {
 
         val params =
             LinearLayout.LayoutParams(
@@ -798,9 +622,7 @@ class MainActivity : Activity() {
 
     private fun showError(message: String) {
 
-        priceText.text =
-            "السعر غير متاح"
-
+        priceText.text = "السعر غير متاح"
         priceText.setTextColor(red)
 
         activityText.text =
