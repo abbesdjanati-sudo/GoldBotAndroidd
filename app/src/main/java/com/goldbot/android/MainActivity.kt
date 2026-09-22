@@ -1,709 +1,304 @@
+package com.example.goldbot
+
+import android.app.Activity
+import android.os.Bundle
+import android.graphics.Color
+import android.graphics.Typeface
+import android.view.Gravity
+import android.widget.*
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
-// =====================================================
-// GOLD BOT PRO - V1
-// Educational Trading Engine
-// =====================================================
+class MainActivity : Activity() {
 
-data class Candle(
-    val time: Long,
-    val open: Double,
-    val high: Double,
-    val low: Double,
-    val close: Double,
-    val volume: Double = 0.0
-)
+    private lateinit var statusText: TextView
+    private lateinit var signalText: TextView
+    private lateinit var priceText: TextView
+    private lateinit var balanceText: TextView
+    private lateinit var riskText: TextView
+    private lateinit var slText: TextView
+    private lateinit var tpText: TextView
+    private lateinit var logText: TextView
 
-enum class Signal {
-    BUY,
-    SELL,
-    WAIT
-}
+    private var running = false
+    private var balance = 3000.0
+    private var riskPercent = 1.0
 
-data class Analysis(
-    val signal: Signal,
-    val confidence: Int,
-    val price: Double,
-    val ema20: Double?,
-    val ema50: Double?,
-    val rsi: Double?,
-    val atr: Double?,
-    val stopLoss: Double?,
-    val takeProfit: Double?,
-    val reason: String
-)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-data class Trade(
-    val type: Signal,
-    val entry: Double,
-    val stopLoss: Double,
-    val takeProfit: Double,
-    val lot: Double,
-    val riskMoney: Double
-)
-
-// =====================================================
-// INDICATORS
-// =====================================================
-
-object Indicators {
-
-    fun sma(
-        values: List<Double>,
-        period: Int
-    ): Double? {
-
-        if (values.size < period) return null
-
-        return values
-            .takeLast(period)
-            .average()
+        try {
+            createInterface()
+        } catch (e: Exception) {
+            val error = TextView(this)
+            error.text = "Gold Bot\n\nخطأ في تشغيل الواجهة:\n${e.message}"
+            error.textSize = 18f
+            error.setPadding(30, 50, 30, 30)
+            setContentView(error)
+        }
     }
 
-    fun ema(
-        values: List<Double>,
-        period: Int
-    ): Double? {
+    private fun createInterface() {
 
-        if (values.size < period) return null
+        val scroll = ScrollView(this)
 
-        val multiplier = 2.0 / (period + 1)
-
-        var result =
-            values.take(period).average()
-
-        for (i in period until values.size) {
-
-            result =
-                ((values[i] - result) * multiplier) +
-                        result
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24, 24, 24, 24)
+            setBackgroundColor(Color.WHITE)
         }
 
-        return result
-    }
+        scroll.addView(root)
 
-    fun rsi(
-        values: List<Double>,
-        period: Int = 14
-    ): Double? {
-
-        if (values.size <= period) return null
-
-        var gain = 0.0
-        var loss = 0.0
-
-        for (i in 1..period) {
-
-            val change =
-                values[i] - values[i - 1]
-
-            if (change >= 0) {
-                gain += change
-            } else {
-                loss += abs(change)
-            }
+        val title = TextView(this).apply {
+            text = "🥇 GOLD BOT"
+            textSize = 30f
+            gravity = Gravity.CENTER
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.BLACK)
         }
 
-        var avgGain = gain / period
-        var avgLoss = loss / period
+        root.addView(title, params())
 
-        for (i in period + 1 until values.size) {
-
-            val change =
-                values[i] - values[i - 1]
-
-            val currentGain =
-                max(change, 0.0)
-
-            val currentLoss =
-                max(-change, 0.0)
-
-            avgGain =
-                ((avgGain * (period - 1)) +
-                        currentGain) / period
-
-            avgLoss =
-                ((avgLoss * (period - 1)) +
-                        currentLoss) / period
+        val subtitle = TextView(this).apply {
+            text = "XAUUSD • Trading Assistant"
+            textSize = 17f
+            gravity = Gravity.CENTER
         }
 
-        if (avgLoss == 0.0)
-            return 100.0
+        root.addView(subtitle, params())
 
-        val rs =
-            avgGain / avgLoss
+        addSeparator(root)
 
-        return 100.0 -
-                (100.0 / (1.0 + rs))
-    }
+        priceText = addInfo(root, "السعر", "غير متصل")
+        balanceText = addInfo(root, "الرصيد", "$3,000.00")
+        riskText = addInfo(root, "المخاطرة", "1%")
 
-    fun atr(
-        candles: List<Candle>,
-        period: Int = 14
-    ): Double? {
+        addSeparator(root)
 
-        if (candles.size <= period)
-            return null
+        addSection(root, "⚙️ استراتيجية التداول")
 
-        val ranges =
-            mutableListOf<Double>()
+        addInfo(root, "EMA سريع", "20")
+        addInfo(root, "EMA بطيء", "50")
+        addInfo(root, "RSI", "14")
+        addInfo(root, "ATR", "14")
+        addInfo(root, "Stop Loss", "1.5 × ATR")
+        addInfo(root, "Take Profit", "2.5 × ATR")
 
-        for (i in 1 until candles.size) {
+        addSeparator(root)
 
-            val current =
-                candles[i]
+        addSection(root, "📊 الإشارة الحالية")
 
-            val previous =
-                candles[i - 1]
+        signalText = TextView(this).apply {
+            text = "انتظار البيانات..."
+            textSize = 21f
+            gravity = Gravity.CENTER
+            setTypeface(null, Typeface.BOLD)
+            setPadding(10, 25, 10, 25)
+        }
 
-            val r1 =
-                current.high - current.low
+        root.addView(signalText, params())
 
-            val r2 =
-                abs(
-                    current.high -
-                            previous.close
+        slText = addInfo(root, "SL", "--")
+        tpText = addInfo(root, "TP", "--")
+
+        addSeparator(root)
+
+        addSection(root, "🤖 التحكم")
+
+        statusText = TextView(this).apply {
+            text = "الحالة: متوقف"
+            textSize = 19f
+            gravity = Gravity.CENTER
+            setTypeface(null, Typeface.BOLD)
+        }
+
+        root.addView(statusText, params())
+
+        val startButton = Button(this).apply {
+            text = "▶ تشغيل الروبوت"
+            textSize = 18f
+        }
+
+        root.addView(startButton, params())
+
+        val stopButton = Button(this).apply {
+            text = "■ إيقاف الروبوت"
+            textSize = 18f
+        }
+
+        root.addView(stopButton, params())
+
+        val analyzeButton = Button(this).apply {
+            text = "🔎 تحليل السوق"
+            textSize = 18f
+        }
+
+        root.addView(analyzeButton, params())
+
+        addSeparator(root)
+
+        addSection(root, "💰 إدارة المخاطر")
+
+        val riskInput = EditText(this).apply {
+            hint = "نسبة المخاطرة %"
+            setText("1.0")
+            inputType = 2
+        }
+
+        root.addView(riskInput, params())
+
+        val applyRiskButton = Button(this).apply {
+            text = "تطبيق المخاطرة"
+        }
+
+        root.addView(applyRiskButton, params())
+
+        addSeparator(root)
+
+        addSection(root, "📜 سجل الروبوت")
+
+        logText = TextView(this).apply {
+            text = "لا توجد عمليات حتى الآن."
+            textSize = 15f
+            setPadding(10, 10, 10, 20)
+        }
+
+        root.addView(logText, params())
+
+        addSeparator(root)
+
+        val warning = TextView(this).apply {
+            text = """
+                ⚠️ وضع Demo / Paper Trading
+
+                هذه النسخة لا ترسل أوامر حقيقية إلى وسيط.
+                لا تستخدمها بأموال حقيقية قبل إضافة اتصال API
+                رسمي وآمن للوسيط واختبار النظام.
+            """.trimIndent()
+
+            textSize = 14f
+            setPadding(10, 20, 10, 20)
+        }
+
+        root.addView(warning, params())
+
+        startButton.setOnClickListener {
+            running = true
+            statusText.text = "الحالة: يعمل ✓"
+            addLog("تم تشغيل الروبوت")
+            analyzeMarket()
+        }
+
+        stopButton.setOnClickListener {
+            running = false
+            statusText.text = "الحالة: متوقف"
+            addLog("تم إيقاف الروبوت")
+        }
+
+        analyzeButton.setOnClickListener {
+            analyzeMarket()
+        }
+
+        applyRiskButton.setOnClickListener {
+
+            val value = riskInput.text.toString().toDoubleOrNull()
+
+            if (value != null && value > 0.0 && value <= 5.0) {
+
+                riskPercent = value
+
+                riskText.text = String.format(
+                    Locale.US,
+                    "%.2f%%",
+                    riskPercent
                 )
 
-            val r3 =
-                abs(
-                    current.low -
-                            previous.close
-                )
-
-            ranges.add(
-                max(
-                    r1,
-                    max(r2, r3)
-                )
-            )
-        }
-
-        if (ranges.size < period)
-            return null
-
-        return ranges
-            .takeLast(period)
-            .average()
-    }
-
-    fun highest(
-        values: List<Double>,
-        period: Int
-    ): Double? {
-
-        if (values.size < period)
-            return null
-
-        return values
-            .takeLast(period)
-            .maxOrNull()
-    }
-
-    fun lowest(
-        values: List<Double>,
-        period: Int
-    ): Double? {
-
-        if (values.size < period)
-            return null
-
-        return values
-            .takeLast(period)
-            .minOrNull()
-    }
-}
-
-// =====================================================
-// RISK MANAGER
-// =====================================================
-
-class RiskManager(
-    private val balance: Double,
-    private val riskPercent: Double
-) {
-
-    fun riskMoney(): Double {
-
-        return balance *
-                riskPercent /
-                100.0
-    }
-
-    fun calculateLot(
-        entry: Double,
-        stopLoss: Double
-    ): Double {
-
-        val distance =
-            abs(entry - stopLoss)
-
-        if (distance <= 0)
-            return 0.0
-
-        /*
-         * هذا حساب تعليمي.
-         * حجم اللوت الحقيقي يعتمد على
-         * مواصفات العقد لدى الوسيط.
-         */
-
-        val risk =
-            riskMoney()
-
-        val estimatedLot =
-            risk / (distance * 100.0)
-
-        return estimatedLot
-            .coerceIn(0.01, 5.0)
-    }
-}
-
-// =====================================================
-// STRATEGY
-// =====================================================
-
-class GoldStrategy {
-
-    fun analyze(
-        candles: List<Candle>
-    ): Analysis {
-
-        val closes =
-            candles.map { it.close }
-
-        val price =
-            closes.last()
-
-        val ema20 =
-            Indicators.ema(
-                closes,
-                20
-            )
-
-        val ema50 =
-            Indicators.ema(
-                closes,
-                50
-            )
-
-        val rsi =
-            Indicators.rsi(
-                closes,
-                14
-            )
-
-        val atr =
-            Indicators.atr(
-                candles,
-                14
-            )
-
-        if (
-            ema20 == null ||
-            ema50 == null ||
-            rsi == null ||
-            atr == null
-        ) {
-
-            return Analysis(
-                signal = Signal.WAIT,
-                confidence = 0,
-                price = price,
-                ema20 = ema20,
-                ema50 = ema50,
-                rsi = rsi,
-                atr = atr,
-                stopLoss = null,
-                takeProfit = null,
-                reason = "بيانات غير كافية"
-            )
-        }
-
-        var buyScore = 0
-        var sellScore = 0
-
-        val reasons =
-            mutableListOf<String>()
-
-        // Trend
-
-        if (ema20 > ema50) {
-
-            buyScore += 30
-
-            reasons.add(
-                "الاتجاه العام صاعد"
-            )
-
-        } else if (ema20 < ema50) {
-
-            sellScore += 30
-
-            reasons.add(
-                "الاتجاه العام هابط"
-            )
-        }
-
-        // Price
-
-        if (price > ema20) {
-
-            buyScore += 20
-
-        } else if (price < ema20) {
-
-            sellScore += 20
-        }
-
-        // RSI
-
-        if (rsi in 50.0..68.0) {
-
-            buyScore += 25
-
-        } else if (rsi in 32.0..50.0) {
-
-            sellScore += 25
-        }
-
-        // Momentum
-
-        val recentHigh =
-            Indicators.highest(
-                closes,
-                10
-            )
-
-        val recentLow =
-            Indicators.lowest(
-                closes,
-                10
-            )
-
-        if (
-            recentHigh != null &&
-            price >= recentHigh
-        ) {
-
-            buyScore += 15
-        }
-
-        if (
-            recentLow != null &&
-            price <= recentLow
-        ) {
-
-            sellScore += 15
-        }
-
-        // ==========================================
-        // BUY
-        // ==========================================
-
-        if (buyScore >= 65) {
-
-            val sl =
-                price - atr * 1.5
-
-            val tp =
-                price + atr * 3.0
-
-            return Analysis(
-                signal = Signal.BUY,
-                confidence = buyScore,
-                price = price,
-                ema20 = ema20,
-                ema50 = ema50,
-                rsi = rsi,
-                atr = atr,
-                stopLoss = sl,
-                takeProfit = tp,
-                reason =
-                    reasons.joinToString(" + ")
-            )
-        }
-
-        // ==========================================
-        // SELL
-        // ==========================================
-
-        if (sellScore >= 65) {
-
-            val sl =
-                price + atr * 1.5
-
-            val tp =
-                price - atr * 3.0
-
-            return Analysis(
-                signal = Signal.SELL,
-                confidence = sellScore,
-                price = price,
-                ema20 = ema20,
-                ema50 = ema50,
-                rsi = rsi,
-                atr = atr,
-                stopLoss = sl,
-                takeProfit = tp,
-                reason =
-                    reasons.joinToString(" + ")
-            )
-        }
-
-        return Analysis(
-            signal = Signal.WAIT,
-            confidence =
-                max(
-                    buyScore,
-                    sellScore
-                ),
-            price = price,
-            ema20 = ema20,
-            ema50 = ema50,
-            rsi = rsi,
-            atr = atr,
-            stopLoss = null,
-            takeProfit = null,
-            reason =
-                "لا توجد إشارة قوية"
-        )
-    }
-}
-
-// =====================================================
-// GOLD BOT
-// =====================================================
-
-class GoldBot(
-    private val balance: Double
-) {
-
-    private val strategy =
-        GoldStrategy()
-
-    private val riskManager =
-        RiskManager(
-            balance = balance,
-            riskPercent = 1.0
-        )
-
-    private val history =
-        mutableListOf<Trade>()
-
-    fun analyze(
-        candles: List<Candle>
-    ) {
-
-        val result =
-            strategy.analyze(candles)
-
-        println()
-        println("================================")
-        println("          GOLD BOT PRO")
-        println("================================")
-
-        println(
-            "Price      : %.2f"
-                .format(result.price)
-        )
-
-        println(
-            "EMA20      : %s"
-                .format(result.ema20)
-        )
-
-        println(
-            "EMA50      : %s"
-                .format(result.ema50)
-        )
-
-        println(
-            "RSI        : %s"
-                .format(result.rsi)
-        )
-
-        println(
-            "ATR        : %s"
-                .format(result.atr)
-        )
-
-        println(
-            "Signal     : ${result.signal}"
-        )
-
-        println(
-            "Confidence : ${result.confidence}%"
-        )
-
-        println(
-            "Reason     : ${result.reason}"
-        )
-
-        if (
-            result.signal != Signal.WAIT &&
-            result.stopLoss != null &&
-            result.takeProfit != null
-        ) {
-
-            val lot =
-                riskManager.calculateLot(
-                    result.price,
-                    result.stopLoss
-                )
-
-            println(
-                "Stop Loss  : %.2f"
-                    .format(result.stopLoss)
-            )
-
-            println(
-                "Take Profit: %.2f"
-                    .format(result.takeProfit)
-            )
-
-            println(
-                "Lot        : %.2f"
-                    .format(lot)
-            )
-
-            println(
-                "Risk       : %.2f USD"
-                    .format(
-                        riskManager.riskMoney()
+                addLog(
+                    "تم تغيير المخاطرة إلى %.2f%%".format(
+                        Locale.US,
+                        riskPercent
                     )
-            )
-
-            history.add(
-                Trade(
-                    type = result.signal,
-                    entry = result.price,
-                    stopLoss = result.stopLoss,
-                    takeProfit = result.takeProfit,
-                    lot = lot,
-                    riskMoney =
-                        riskManager.riskMoney()
                 )
-            )
-        }
 
-        println("================================")
-    }
+            } else {
 
-    fun showHistory() {
-
-        println()
-        println("TRADE HISTORY")
-
-        if (history.isEmpty()) {
-
-            println(
-                "لا توجد صفقات"
-            )
-
-            return
-        }
-
-        history.forEachIndexed {
-                index,
-                trade ->
-
-            println(
-                "${index + 1}. " +
-                        "${trade.type} | " +
-                        "Entry=${trade.entry} | " +
-                        "SL=${trade.stopLoss} | " +
-                        "TP=${trade.takeProfit} | " +
-                        "Lot=${trade.lot}"
-            )
-        }
-    }
-}
-
-// =====================================================
-// TEST DATA
-// =====================================================
-
-fun generateMarketData(): List<Candle> {
-
-    val result =
-        mutableListOf<Candle>()
-
-    var price = 2650.0
-
-    for (i in 0 until 120) {
-
-        val movement =
-            when {
-
-                i < 30 ->
-                    0.8
-
-                i < 60 ->
-                    1.2
-
-                i < 90 ->
-                    1.8
-
-                else ->
-                    1.4
+                Toast.makeText(
+                    this,
+                    "أدخل قيمة بين 0.1% و 5%",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
 
-        val open =
-            price
-
-        val close =
-            open + movement
-
-        val high =
-            close + 2.0
-
-        val low =
-            open - 1.5
-
-        result.add(
-            Candle(
-                time = i.toLong(),
-                open = open,
-                high = high,
-                low = low,
-                close = close,
-                volume = 1000.0
-            )
-        )
-
-        price =
-            close
+        setContentView(scroll)
     }
 
-    return result
-}
+    private fun analyzeMarket() {
 
-// =====================================================
-// MAIN
-// =====================================================
+        // بيانات تجريبية فقط.
+        // لاحقًا نستبدلها ببيانات XAUUSD حقيقية من API.
 
-fun main() {
+        val price = 2650.00
+        val ema20 = 2648.50
+        val ema50 = 2645.00
+        val rsi = 58.0
+        val atr = 4.0
 
-    println()
-    println("Starting GOLD BOT PRO...")
-    println()
-
-    val marketData =
-        generateMarketData()
-
-    val bot =
-        GoldBot(
-            balance = 1000.0
+        priceText.text = String.format(
+            Locale.US,
+            "$%.2f",
+            price
         )
 
-    bot.analyze(
-        marketData
-    )
+        val signal = when {
 
-    bot.showHistory()
+            ema20 > ema50 && rsi >= 50.0 && rsi < 70.0 ->
+                "🟢 BUY"
 
-    println()
-    println("Bot finished.")
-}
+            ema20 < ema50 && rsi <= 50.0 && rsi > 30.0 ->
+                "🔴 SELL"
+
+            else ->
+                "🟡 WAIT"
+        }
+
+        signalText.text = signal
+
+        val sl: Double
+        val tp: Double
+
+        if (signal.contains("BUY")) {
+
+            sl = price - (1.5 * atr)
+            tp = price + (2.5 * atr)
+
+        } else if (signal.contains("SELL")) {
+
+            sl = price + (1.5 * atr)
+            tp = price - (2.5 * atr)
+
+        } else {
+
+            sl = 0.0
+            tp = 0.0
+        }
+
+        slText.text = if (sl > 0) {
+            String.format(Locale.US, "$%.2f", sl)
+        } else {
+            "--"
+        }
+
+        tpText.text = if (tp > 0) {
+            String.format(Locale.US, "$%.2f", tp)
+        } else {
+            "--"
+        }
+
+        addLog(
+            "تحليل: $signal | EMA20 %.2f | EMA50 %.2f | RSI %.1f".format(
+                Locale
