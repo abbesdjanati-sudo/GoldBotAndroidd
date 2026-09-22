@@ -17,6 +17,15 @@ import java.net.URL
 import java.util.Locale
 import kotlin.concurrent.thread
 class MainActivity : Activity() {
+  
+    private val priceHandler = Handler(Looper.getMainLooper())
+
+private val priceRunnable = object : Runnable {
+    override fun run() {
+        getRealGoldPrice()
+        priceHandler.postDelayed(this, 10000)
+    }
+}
 
     private lateinit var status: TextView
     private lateinit var signal: TextView
@@ -117,7 +126,13 @@ class MainActivity : Activity() {
         scroll.addView(root)
 
         setContentView(scroll)
-    }
+    scroll.addView(root)
+
+setContentView(scroll)
+
+priceHandler.post(priceRunnable)
+}
+    
 
     private fun addLog(message: String) {
         log.text = "📜 سجل الروبوت:\n• $message"
