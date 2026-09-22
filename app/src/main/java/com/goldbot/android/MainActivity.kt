@@ -9,6 +9,13 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 
+import android.os.Handler
+import android.os.Looper
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.Locale
+import kotlin.concurrent.thread
 class MainActivity : Activity() {
 
     private lateinit var status: TextView
