@@ -126,13 +126,10 @@ private val priceRunnable = object : Runnable {
         scroll.addView(root)
 
         setContentView(scroll)
-    scroll.addView(root)
-
-setContentView(scroll)
 
 priceHandler.post(priceRunnable)
-}
-    
+                                {
+      
 
     private fun addLog(message: String) {
         log.text = "📜 سجل الروبوت:\n• $message"
